@@ -116,6 +116,10 @@ L'interface utilisateur doit être simple et intuitive.
 
 Le système doit gérer l'écoute et les fichiers audio de différentes tailles sans erreur.
 
+---
+
+---
+
 Un _Prototype Minimal_, ou _MVP (Minimum Viable Product)_, est une version simplifiée d’un produit qui contient juste assez de fonctionnalités pour être utilisable par les premiers utilisateurs et permettre de recueillir leurs retours. C’est une stratégie clé dans les méthodes _Lean Startup_ et _Agile_.
 
 1. Objectif du MVP

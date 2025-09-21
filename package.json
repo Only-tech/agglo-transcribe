@@ -13,6 +13,7 @@
     "heroicon": "^0.0.2",
     "next": "15.5.2",
     "node-whisper": "^2024.11.13",
+    "nodemailer": "^7.0.6",
     "openai": "^5.20.1",
     "react": "19.1.0",
     "react-dom": "19.1.0",
@@ -21,7 +22,9 @@
   "devDependencies": {
     "@eslint/eslintrc": "^3",
     "@tailwindcss/postcss": "^4",
+    "@types/bun": "^1.2.22",
     "@types/node": "^20",
+    "@types/nodemailer": "^7.0.1",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
