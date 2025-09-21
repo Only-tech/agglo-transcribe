@@ -28,27 +28,110 @@ body {
 
 
 :root {
-  --h-scrollbar-thumb-color: #030712;
+  --h-scrollbar-thumb-color: rgb(172, 170, 170);
   --h-scrollbar-track-color: transparent;
 }
 
 ::-webkit-scrollbar {
-  width: 4px;
+  width: 8px;
 }
 
 ::-webkit-scrollbar-track {
   background: var(--h-scrollbar-track-color);
-  margin: 0.5rem 0;
+  margin: 1rem 0;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--h-scrollbar-thumb-color);
-  border-radius: 5px;
-
+  background: var(--h-scrollbar-track-color);
+  border-left: 3px solid var(--h-scrollbar-thumb-color);
 }
 
 ::-webkit-scrollbar-thumb:hover {
   background: #f5f5dc !important;
-  border: 2px solid #111827;
+  border: 2px solid var(--h-scrollbar-thumb-color);
   border-radius: 5px;
+}
+
+
+
+
+.btn-hover-effect {
+  /* Positionnement relatif pour le pseudo-élément ::before */
+  position: relative;
+
+  /* Assure que l'icône reste centrée */
+  display: grid;
+  place-content: center;
+
+  /* Cache le point indicateur quand il est en dehors du bouton */
+  overflow: hidden;
+
+  /* Définit la couleur de l'indicateur et de l'icône au survol */
+  --indicator-color: rgb(230, 230, 230);
+}
+
+/* Le point indicateur */
+.btn-hover-effect::before {
+  content: "";
+  position: absolute;
+
+  /* Taille et forme du point */
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: var(--indicator-color);
+
+  /* Position initiale : caché sous le bouton */
+  left: calc(50% - 3px);
+  /* 50% - la moitié de sa largeur */
+  bottom: -16px;
+
+  /* Animation */
+  transition: bottom 300ms ease-in-out;
+}
+
+/* Au survol, le point indicateur monte pour devenir visible */
+.btn-hover-effect:hover::before {
+  bottom: 8px;
+  /* Position finale visible */
+}
+
+/* Cible l'icône (enfant direct du bouton) */
+.btn-hover-effect>* {
+  transition: transform 300ms ease-in-out;
+}
+
+.btn-hover-effect:hover>* {
+  transform: translateY(-6px);
+}
+
+/* Change la couleur de l'icône au survol */
+.btn-hover-effect:hover {
+  color: var(--indicator-color);
+}
+
+
+@keyframes dot-bounce {
+
+  0%,
+  80%,
+  100% {
+    transform: scale(0);
+  }
+
+  40% {
+    transform: scale(1);
+  }
+}
+
+.animate-dot-bounce-1 {
+  animation: dot-bounce 1.4s infinite ease-in-out;
+}
+
+.animate-dot-bounce-2 {
+  animation: dot-bounce 1.4s infinite ease-in-out 0.2s;
+}
+
+.animate-dot-bounce-3 {
+  animation: dot-bounce 1.4s infinite ease-in-out 0.4s;
 }

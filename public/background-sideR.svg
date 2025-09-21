@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   width="1440"
+   height="724"
+   viewBox="0 0 1440 724"
+   fill="none"
+   version="1.1"
+   id="svg1"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <g
+     opacity="0.3"
+     filter="url(#filter0_f)"
+     id="g1">
+    <ellipse
+       cx="-180.528"
+       cy="188.597"
+       rx="239.472"
+       ry="248.432"
+       fill="#D5AEE4"
+       id="ellipse1" />
+  </g>
+  <path
+     d="m 678.06444,222 c -44.75723,-68.8 -18.64848,-208.6667 0,-270 l 752.78906,-101 71.4565,271.5 -42.6523,601 C 1372.5029,724.5 1178.1524,717 1097.9439,679 997.6832,631.5 1043.1052,555 960.01622,515 876.92396,475 924.56162,369.5 895.75745,329.5 866.95329,289.5 734.01099,308 678.06444,222 Z"
+     fill="#FFF1DA"
+     id="path1"
+     style="fill:#dbe3de;stroke-width:1.05255" />
+  <defs
+     id="defs1">
+    <filter
+       id="filter0_f"
+       x="-570"
+       y="-209.836"
+       width="778.945"
+       height="796.864"
+       filterUnits="userSpaceOnUse"
+       color-interpolation-filters="sRGB">
+      <feFlood
+         flood-opacity="0"
+         result="BackgroundImageFix"
+         id="feFlood1" />
+      <feBlend
+         mode="normal"
+         in="SourceGraphic"
+         in2="BackgroundImageFix"
+         result="shape"
+         id="feBlend1" />
+      <feGaussianBlur
+         stdDeviation="75"
+         result="effect1_foregroundBlur"
+         id="feGaussianBlur1" />
+    </filter>
+  </defs>
+</svg>

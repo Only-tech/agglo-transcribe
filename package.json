@@ -15,7 +15,8 @@
     "node-whisper": "^2024.11.13",
     "openai": "^5.20.1",
     "react": "19.1.0",
-    "react-dom": "19.1.0"
+    "react-dom": "19.1.0",
+    "resend": "^6.0.3"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
