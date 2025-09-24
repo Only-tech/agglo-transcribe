@@ -502,7 +502,8 @@ const handleDownload = () => {
             <span className="animate-pulse">|</span>
           </h3>
 
-          <div className="relative  max-h-full max-w-3xl xl:max-w-5xl xl:w-5xl p-[1px] rounded-4xl  mx-auto transition-all bg-gray-300 dark:bg-white/20 duration-400 ease-in-out" style={{ clipPath: "var(--clip-path-squircle-60)", filter: "drop-shadow(0 8px 16px rgba(0,0,0,0.3))" }}>
+          <div className="relative max-h-full max-w-3xl xl:max-w-5xl xl:w-5xl drop-shadow-[3px_15px_5px_rgba(0,0,0,0.15)] dark:drop-shadow-[3px_15px_5px_rgba(0,0,0,0.95)] mx-auto transition-all duration-400 ease-in-out">
+          <div className="relative p-[1px] transition-all bg-gray-300 dark:bg-white/40 duration-400 ease-in-out" style={{ clipPath: "var(--clip-path-squircle-60)"}}>
           <div className="relative bg-gradient-to-b p-1.5 from-stone-300 to-white dark:bg-gradient-to-b dark:from-[#4E4E4E] dark:to-[#222222] rounded-4xl" style={{ clipPath: "var(--clip-path-squircle-60)" }}>
             <div className="bg-gradient-to-b from-white/90 to-gray-300/20 dark:bg-gradient-to-b dark:from-[#1E1E1E]/30 dark:to-[#222222]/10 rounded-3xl p-3" style={{ clipPath: "var(--clip-path-squircle-60)" }}>
               <div className="flex flex-col items-center justify-center transition-all duration-300 ease-in-out">
@@ -660,6 +661,7 @@ const handleDownload = () => {
                 ) : null}
               </div>
             </div>
+          </div>
           </div>
           </div>
         </>
