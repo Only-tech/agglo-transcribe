@@ -4,6 +4,7 @@ import { ArrowDownTrayIcon, PlusIcon, Square2StackIcon, XMarkIcon, CheckIcon, Ch
 import { useState, useRef, useEffect, useCallback } from "react";
 import { Button, MicrophoneIcon, MicrophoneSlashIcon } from "@/app/ui/MicrophoneButton";
 import { processAudioChunk } from "@/app/utils/processAudioChunk";
+import { ThemeToggle } from '@/app/ui/ThemeToggle';
 
 
 // --- États & types ---
@@ -666,6 +667,7 @@ const handleDownload = () => {
           </div>
         </>
       )}
+      <ThemeToggle />
     </main>
   );
 }
