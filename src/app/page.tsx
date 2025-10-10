@@ -488,6 +488,7 @@ const handleDownload = () => {
 
 
   return (
+    <>
     <main className="min-h-screen flex flex-col items-center justify-center p-2 sm:p-6">
       {showIntro ? (
         <div className="text-center p-6 ">
@@ -667,7 +668,10 @@ const handleDownload = () => {
           </div>
         </>
       )}
-      <ThemeToggle />
     </main>
+    <div className="flex justify-end m-4">
+      <ThemeToggle />
+    </div>
+    </>
   );
 }
