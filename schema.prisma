@@ -1,0 +1,115 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+datasource db {
+  provider     = "postgresql"
+  url          = env("DATABASE_URL")
+  relationMode = "foreignKeys"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// -------------------------------------
+// Authentification (géré par NextAuth)
+// -------------------------------------
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// -------------------------------------
+// Modèles de notre application
+// -------------------------------------
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  password      String? 
+  createdAt     DateTime  @default(now())
+
+  // Relations
+  accounts        Account[]
+  sessions        Session[]
+  meetingsCreated Meeting[]     @relation("Creator")
+  participations  Participant[]
+}
+
+model Meeting {
+  id        String   @id @default(cuid())
+  title     String
+  password  String // Haché avec bcrypt
+  createdAt DateTime @default(now())
+  status    String   @default("active") // 'active', 'ended', 'deleted'
+
+  creatorId String
+  creator   User   @relation("Creator", fields: [creatorId], references: [id])
+
+  participants Participant[]
+
+  // Relation 1-1 avec Analysis
+  analysis Analysis?
+
+  firestoreCollectionId String @unique @default(cuid())
+}
+
+model Participant {
+  id        String   @id @default(cuid())
+  joinedAt  DateTime @default(now())
+
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  meetingId String
+  meeting   Meeting  @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, meetingId]) 
+}
+
+// Résumés/analyses IA
+model Analysis {
+  id          String   @id @default(cuid())
+  meetingId   String   @unique
+  summary     String?  @db.Text
+  themes      Json? // ["sujet1", "décision2"]
+  actionItems Json? // ["action1", "action2"]
+  fullText    String?  @db.Text
+  createdAt   DateTime @default(now())
+
+  // Relation inverse vers Meeting
+  meeting Meeting @relation(fields: [meetingId], references: [id])
+}

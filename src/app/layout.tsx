@@ -3,6 +3,9 @@ import { Montserrat } from 'next/font/google';
 import "./globals.css";
 import { Providers } from './providers';
 import { ThemeToggle } from '@/app/ui/ThemeToggle';
+import Link from "next/link";
+import { AuthStatus } from "@/app/ui/AuthStatus";
+import AggloTranscribeLogo from '@/app/ui/logo/AggloTranscribeLogo'; 
 
 const montserrat = Montserrat({
   subsets: ['latin'],
@@ -11,8 +14,8 @@ const montserrat = Montserrat({
 });
 
 export const metadata: Metadata = {
-  title: "Transcripteur Audio",
-  description: "Powered by Whisper",
+  title: "Transcripteur Audio Pro",
+  description: "Gestion de réunions et transcription",
 };
 
 export default function RootLayout({
@@ -38,11 +41,23 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className={montserrat.className}>
+      <body className={`${montserrat.className} min-h-dvh grid grid-rows-[auto_1fr_auto]`}>
         <Providers>
-          <header></header>
-          {children}
-          <footer className="flex justify-end pb-3 pr-3">
+          <header className="flex justify-center md:justify-between gap-3 flex-wrap items-center px-[5%] py-2 border-b border-gray-300 dark:border-white/10">
+            <Link href="/"
+              title="Transcrire - De la parole au text" 
+              className="text-xl font-bold text-gray-900 dark:text-white/90 hover:text-blue-800  translate-y-0 hover:translate-y-1.5 scale-100 hover:scale-102 transform transition-all ease-out duration-600"
+            >
+              <AggloTranscribeLogo/>
+            </Link>
+            <AuthStatus />
+          </header>
+          
+          <main className="relative  flex flex-col justify-start xl:justify-center p-2 sm:p-4">
+            {children}
+          </main>
+          
+          <footer className="flex justify-end py-2 px-3 border-t border-gray-300 dark:border-white/10">
             <ThemeToggle />
           </footer>
         </Providers>

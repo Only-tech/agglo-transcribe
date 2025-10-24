@@ -45,7 +45,7 @@ body {
 
 ::-webkit-scrollbar-track {
   background: var(--h-scrollbar-track-color);
-  margin: 1rem 0;
+  margin: 1.5rem 0;
 }
 
 ::-webkit-scrollbar-thumb {
@@ -154,4 +154,38 @@ body {
       .2926114347613975px calc(100% - 76.01693px),
       0px calc(100% - 120px),
       0px 120px);
+}
+
+
+/* ========== Display Demo Transcribe ============ */
+@keyframes fadeInUp {
+  0% {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fadeInUp {
+  animation: fadeInUp 0.6s ease-out forwards;
+}
+
+@keyframes fadeOutDown {
+  0% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+}
+
+.animate-fadeOutDown {
+  animation: fadeOutDown 0.4s ease-in forwards;
 }

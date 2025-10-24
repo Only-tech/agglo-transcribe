@@ -2,7 +2,8 @@ import React from 'react';
 import { XMarkIcon } from "@heroicons/react/20/solid";
 import { ActionButton, UploadButton } from '@/app/ui/ActionButton';
 import { MicrophoneIcon, MicrophoneSlashIcon } from '@/app/ui/Icons';
-import { LoadingAnimation } from '@/app/ui/LoadingAnimation';
+import Loader from '@/app/ui/Loader';
+import { StopIcon } from '@heroicons/react/24/solid';
 
 interface ActionBarsProps {
     liveState: 'Recording' | 'Paused' | 'Idle' | 'Finished';
@@ -24,7 +25,7 @@ export const ActionBars = ({ liveState, isLoading, progress, onStart, onPause, o
     if (isLoading) {
         return (
         <div className="w-full flex items-center justify-center pt-4 pb-2 mt-4 border-t border-gray-300 dark:border-white/10">
-            <LoadingAnimation progress={progress} />
+            <Loader variant="both" progress={progress} />
         </div>
         );
     }
@@ -34,7 +35,7 @@ export const ActionBars = ({ liveState, isLoading, progress, onStart, onPause, o
         {showBottomBar && (
             <div className="flex gap-6 justify-center items-center">
                 <ActionButton variant="icon" size="large" onClick={onStop} title="Stop & Terminer">
-                    <XMarkIcon className="size-6" />
+                    <StopIcon className="size-6" />
                 </ActionButton>
                 <div className="relative">
                     {isRecording && <div className="absolute inset-0 rounded-full bg-[#48795e] opacity-30 animate-ping"></div>}
@@ -47,7 +48,7 @@ export const ActionBars = ({ liveState, isLoading, progress, onStart, onPause, o
                     {isRecording ? <MicrophoneIcon className="size-6" /> : <MicrophoneSlashIcon className="size-6" />}
                     </ActionButton>
                 </div>
-                <div className="w-10 h-10"></div> {/* Spacer */}
+                <div className="w-10 h-10"></div> {/* espace */}
             </div>
         )}
 

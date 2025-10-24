@@ -70,6 +70,7 @@ export async function POST(req: Request) {
     const isWindows = process.platform === "win32";
     const pythonExecutable = isWindows ? "python.exe" : "python";
     
+    // Chemin vers le venv
     const pythonVenvPath = isWindows 
       ? path.join(projectRoot, ".venv", "Scripts", pythonExecutable)
       : path.join(projectRoot, ".venv", "bin", pythonExecutable);

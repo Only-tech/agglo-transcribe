@@ -25,7 +25,7 @@ export const EmailForm = ({ onSubmit, onSkip, isLoading, progress }: EmailFormPr
         return;
         }
         setEmailError("");
-        onSubmit(userEmail); 
+        onSubmit(userEmail); // Appelle la fonction passée en prop
     };
 
     return (
