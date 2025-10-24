@@ -43,6 +43,7 @@ export async function POST(req: Request) {
     const mime = file.type;
     let ext = "tmp"; // Extension générique
     if (mime.includes("webm")) ext = "webm";
+    else if (mime.includes("ogg")) ext = "ogg";
     else if (mime.includes("mp4") || mime.includes("m4a")) ext = "m4a";
     else if (mime.includes("mpeg")) ext = "mp3";
     else if (mime.includes("wav")) ext = "wav";
@@ -69,7 +70,6 @@ export async function POST(req: Request) {
     const isWindows = process.platform === "win32";
     const pythonExecutable = isWindows ? "python.exe" : "python";
     
-    // Chemin vers le venv
     const pythonVenvPath = isWindows 
       ? path.join(projectRoot, ".venv", "Scripts", pythonExecutable)
       : path.join(projectRoot, ".venv", "bin", pythonExecutable);

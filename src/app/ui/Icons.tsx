@@ -1,6 +1,5 @@
 import React from 'react';
 
-
 export const MicrophoneIcon = (props: React.SVGProps<SVGSVGElement>) => (
   <svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg" {...props}>
     <path d="M16.7673 6.54284C16.7673 3.91128 14.634 1.77799 12.0024 1.77799C9.37089 1.77799 7.2376 3.91129 7.2376 6.54284L7.2376 13.5647C7.2376 16.1963 9.37089 18.3296 12.0024 18.3296C14.634 18.3296 16.7673 16.1963 16.7673 13.5647L16.7673 6.54284ZM12.0024 3.28268C13.803 3.28268 15.2626 4.7423 15.2626 6.54284L15.2626 13.5647C15.2626 15.3652 13.803 16.8249 12.0024 16.8249C10.2019 16.8249 8.74229 15.3652 8.74229 13.5647L8.74229 6.54284C8.74229 4.7423 10.2019 3.28268 12.0024 3.28268Z" fill="currentColor"/>
@@ -16,19 +15,4 @@ export const MicrophoneSlashIcon = (props: React.SVGProps<SVGSVGElement>) => (
     </g>
     <path d="M4 4L20 20" stroke="white" strokeWidth="2.5" strokeLinecap="round"/>
   </svg>
-);
-
-
-interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  children: React.ReactNode;
-  className?: string;
-}
-
-export const Button = ({ children, className = '', ...props }: ButtonProps) => (
-  <button
-    className={`flex items-center justify-center rounded-full transition-colors disabled:opacity-50 ${className}`}
-    {...props}
-  >
-    {children}
-  </button>
 );

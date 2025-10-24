@@ -1,12 +1,14 @@
 // Buffer glissant par session
 const slidingBuffers: Record<string, BlobPart[]> = {};
 
-export async function processAudioChunk(
-  blob: Blob,
-  sessionId: string
-): Promise<string | null> {
+export async function processAudioChunk( blob: Blob, sessionId: string): Promise<string | null> {
   try {
-    // ⚠️ Ignore les micro-chunks (souvent invalides)
+    if (!slidingBuffers[sessionId]) {
+      console.warn("[processAudioChunk] Session terminée ou invalide, chunk ignoré");
+      return null;
+    }
+
+    // Ignore les micro-chunks (souvent invalides)
     if (blob.size < 4000) {
       console.warn("[processAudioChunk] Chunk ignoré (trop petit):", blob.size, "bytes");
       return null;
@@ -17,7 +19,6 @@ export async function processAudioChunk(
       slidingBuffers[sessionId] = [];
     }
 
-    // Ajoute le chunk courant au buffer
     slidingBuffers[sessionId].push(blob);
 
     // Construit un blob combiné (buffer glissant)

@@ -6,7 +6,7 @@ import warnings
 
 warnings.filterwarnings("ignore", message="FP16 is not supported on CPU*")
 
-model = whisper.load_model("tiny")  # Changer à base, small, medium, large si nécessaire
+model = whisper.load_model("small")  # Changer à tiny, base, small, medium, large si nécessaire
 
 def transcribe(file_path: str):
     result = model.transcribe(

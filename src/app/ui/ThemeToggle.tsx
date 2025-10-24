@@ -17,7 +17,7 @@ export function ThemeToggle() {
   return (
     <label
       htmlFor="themeToggle"
-      className=" inline-flex items-center cursor-pointer rounded-full shadow-2xl "
+      className="inline-flex items-center cursor-pointer rounded-full drop-shadow-[0px_3px_3px_rgba(0,0,0,0.6)] dark:shadow-[0px_5px_5px_rgba(0,0,0,0.4)] shadow-[hsl(var(--always-black)/5.1%)]"
       title="Changer le thème"
     >
       <input

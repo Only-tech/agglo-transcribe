@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Montserrat } from 'next/font/google';
 import "./globals.css";
 import { Providers } from './providers';
+import { ThemeToggle } from '@/app/ui/ThemeToggle';
 
 const montserrat = Montserrat({
   subsets: ['latin'],
@@ -39,7 +40,11 @@ export default function RootLayout({
       </head>
       <body className={montserrat.className}>
         <Providers>
+          <header></header>
           {children}
+          <footer className="flex justify-end pb-3 pr-3">
+            <ThemeToggle />
+          </footer>
         </Providers>
       </body>
     </html>
