@@ -27,24 +27,20 @@ export const authOptions: AuthOptions = {
             return null;
             }
 
-            // 1. Trouver l'utilisateur
             const user = await db.user.findUnique({
             where: { email: credentials.email }
             });
 
             if (!user || !user.password) {
-            // Si l'utilisateur existe mais n'a pas de mdp (ex: auth Google)
             return null;
             }
 
-            // 2. Vérifier le mot de passe
             const isPasswordValid = await compare(credentials.password, user.password);
 
             if (!isPasswordValid) {
             return null;
             }
 
-            // 3. Retourner l'utilisateur (sans le mot de passe)
             return {
             id: user.id,
             email: user.email,
@@ -52,22 +48,19 @@ export const authOptions: AuthOptions = {
             };
         }
         })
-        // ... vous pouvez ajouter d'autres providers (Google, GitHub, etc.)
     ],
 
     callbacks: {
-        // Ce callback est appelé quand un JWT est créé/mis à jour
         async jwt({ token, user }) {
         if (user) {
-            token.id = user.id; // Ajoute l'ID de l'utilisateur au token
+            token.id = user.id; 
         }
         return token;
         },
         
-        // Ce callback est appelé quand une session est accédée
         async session({ session, token }) {
         if (session.user) {
-            session.user.id = token.id as string; // Ajoute l'ID à l'objet session
+            session.user.id = token.id as string; 
         }
         return session;
         }

@@ -3,10 +3,8 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { db } from "@/app/lib/db";
 
-export async function GET(
-    req: Request,
-    { params }: { params: { id: string } }
-) {
+export async function GET(req: Request, props: { params: Promise<{ id: string }> }) {
+    const params = await props.params;
     const meetingId = params.id;
     try {
         const session = await getServerSession(authOptions);

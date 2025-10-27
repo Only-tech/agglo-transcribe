@@ -38,11 +38,11 @@ export async function POST(req: Request) {
         const { wavPath, cleanup: audioCleanup } = await convertToWav(file);
         cleanup = audioCleanup; 
         text = await runWhisper(wavPath);
-    } catch (audioError: any) {
-        if (audioError.message.includes("trop court")) {
-            return NextResponse.json({ transcription: null });
-        }
-        throw audioError;
+    } catch (audioError: unknown) {
+      if (audioError instanceof Error && audioError.message.includes("trop court")) {
+        return NextResponse.json({ transcription: null });
+      }
+      throw audioError;
     } finally {
         await cleanup(); 
     }
@@ -63,18 +63,19 @@ export async function POST(req: Request) {
       timestamp: Date.now(),
     };
 
-    // 'meetings' -> 'ID_MEETING' -> 'entries'
     const docRef = await firestore
       .collection("meetings")
       .doc(firestoreCollectionId)
       .collection("entries")
       .add(entry);
 
-    // 7. Renvoyer le texte même si pas besoin, pour débogage
     return NextResponse.json({ id: docRef.id, text: entry.text });
 
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error("Transcription chunk error:", err);
-    return NextResponse.json({ error: err.message || "Erreur serveur." }, { status: 500 });
+    if (err instanceof Error) {
+      return NextResponse.json({ error: err.message }, { status: 500 });
+    }
+    return NextResponse.json({ error: "Erreur serveur." }, { status: 500 });
   }
 }

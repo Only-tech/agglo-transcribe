@@ -133,3 +133,9 @@ Un _Prototype Minimal_, ou _MVP (Minimum Viable Product)_, est une version simpl
 - Il est _fonctionnel_ (ce n’est pas juste une maquette ou un concept).
 - Il se concentre sur _une ou deux fonctionnalités essentielles_.
 - Il doit apporter _une valeur minimale mais suffisante_ à l’utilisateur.
+
+---
+
+```bash
+La phase de MVP à mené à la phrase de conceptualisation globale et l'ajout de composants réutilisables, ainsi nous sommes maintenant sur un CRUD à plusieurs pages.
+```

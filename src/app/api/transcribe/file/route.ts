@@ -52,8 +52,11 @@ export async function POST(req: Request) {
       .add(entry);
 
     return NextResponse.json({ text: entry.text });
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error("Erreur upload fichier:", err);
-    return NextResponse.json({ error: err.message || "Erreur serveur." }, { status: 500 });
+    if (err instanceof Error) {
+      return NextResponse.json({ error: err.message }, { status: 500 });
+    }
+    return NextResponse.json({ error: "Erreur serveur." }, { status: 500 });
   }
 }

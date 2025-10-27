@@ -19,11 +19,17 @@ export async function POST(req: Request) {
         }
 
         return NextResponse.json({ text: text.trim() });
-    } catch (err: any) {
+    } catch (err: unknown) {
         console.error("Erreur transcription démo:", err);
+        if (err instanceof Error) {
+            return NextResponse.json(
+                { error: err.message },
+                { status: 500 }
+            );
+        }
         return NextResponse.json(
-        { error: err.message || "Erreur serveur." },
-        { status: 500 }
+            { error: "Erreur serveur." },
+            { status: 500 }
         );
     }
 }

@@ -22,11 +22,17 @@ export async function GET(
         id: snapshot.id,
         data: snapshot.data(),
         });
-    } catch (err: any) {
+    } catch (err: unknown) {
         console.error("Erreur lecture Firestore:", err);
+        if (err instanceof Error) {
+            return NextResponse.json(
+                { error: err.message },
+                { status: 500 }
+            );
+        }
         return NextResponse.json(
-        { error: err.message || "Erreur Firestore" },
-        { status: 500 }
+            { error: "Erreur Firestore" },
+            { status: 500 }
         );
     }
 }

@@ -32,7 +32,7 @@ export async function POST(req: Request) {
         }
         });
 
-        const { password: _, ...userWithoutPassword } = user;
+        const { password: _pw, ...userWithoutPassword } = user;
         return NextResponse.json(userWithoutPassword, { status: 201 });
 
     } catch (error) {

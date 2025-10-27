@@ -97,7 +97,7 @@ export default function HomePage() {
             const newEntry: TranscriptEntry = {
             id: crypto.randomUUID(),
             userId: "demo",
-            userName: "Comme une Hirondelle fugasse, Je suis de passage 😉",
+            userName: "Vite fait 😉",
             text: data.text,
             isEdited: false,
             timestamp: Date.now(),

@@ -59,8 +59,11 @@ export async function POST(req: Request) {
         }
 
         return NextResponse.json({ id: meeting.id, firestoreOk });
-    } catch (err: any) {
+    } catch (err: unknown) {
         console.error("Erreur création réunion:", err);
+        if (err instanceof Error) {
+            return NextResponse.json({ error: err.message }, { status: 500 });
+        }
         return NextResponse.json({ error: "Erreur serveur." }, { status: 500 });
     }
 }

@@ -56,11 +56,11 @@ export async function getAiAnalysis(fullText: string): Promise<AnalysisResult> {
         .replace(/```/g, "")
         .trim();
 
-    let parsed: any;
+    let parsed: Partial<AnalysisResult>;
     try {
-        parsed = JSON.parse(cleaned);
+        parsed = JSON.parse(cleaned) as Partial<AnalysisResult>;
     } catch (err) {
-        console.error("Erreur parsing JSON Gemini:", cleaned);
+        console.error("Erreur parsing JSON Gemini:", err, cleaned);
         throw new Error("Impossible de parser la réponse Gemini en JSON.");
     }
 

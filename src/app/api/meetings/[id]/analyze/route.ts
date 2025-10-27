@@ -48,15 +48,24 @@ export async function POST(
         let analysis: AnalysisResult;
         try {
         analysis = await getAiAnalysis(fullText);
-        } catch (aiErr: any) {
-        console.error("Erreur Gemini:", aiErr);
-        return NextResponse.json(
-            {
-            error: "Erreur lors de l'appel à l'IA",
-            details: aiErr.message || aiErr.toString(),
-            },
-            { status: 500 }
-        );
+        } catch (aiErr: unknown) {
+            console.error("Erreur Gemini:", aiErr);
+           if (aiErr instanceof Error) {
+                return NextResponse.json(
+                    {
+                        error: "Erreur lors de l'appel à l'IA",
+                        details: aiErr.message,
+                    },
+                    { status: 500 }
+                );
+            }
+            return NextResponse.json(
+                {
+                    error: "Erreur lors de l'appel à l'IA",
+                    details: String(aiErr),
+                },
+                { status: 500 }
+            );
         }
 
         // Sauvegarde en base SQL (upsert)
@@ -86,11 +95,17 @@ export async function POST(
             actionItems: saved.actionItems,
         },
         });
-    } catch (err: any) {
+    } catch (err: unknown) {
         console.error("Erreur analyse réunion:", err);
+        if (err instanceof Error) {
+            return NextResponse.json(
+                { error: err.message },
+                { status: 500 }
+            );
+        }
         return NextResponse.json(
-        { error: err.message || "Erreur serveur" },
-        { status: 500 }
+            { error: "Erreur serveur" },
+            { status: 500 }
         );
     }
 }

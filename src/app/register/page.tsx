@@ -16,7 +16,7 @@ export default function RegisterPage() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
     const router = useRouter();
-    const [showPassword, setShowPassword] = useState(false);
+    // const [showPassword, setShowPassword] = useState(false);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -49,9 +49,13 @@ export default function RegisterPage() {
             router.push("/login?message=RegistrationSuccess");
         }
 
-        } catch (err: any) {
+        } catch (err: unknown) {
             setLoading(false);
-            setError(err.message);
+            if (err instanceof Error) {
+                setError(err.message);
+            } else {
+                setError("Une erreur inconnue est survenue.");
+            }
         }
     };
 
@@ -85,7 +89,8 @@ export default function RegisterPage() {
                     <FloatingLabelInput
                         id="password"
                         label="Mot de passe (8+ caractères)"
-                        type={showPassword ? 'text' : 'password'}
+                        type="password"
+                        // type={showPassword ? 'text' : 'password'}
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         required

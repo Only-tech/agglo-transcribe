@@ -11,54 +11,50 @@ export async function GET(req: Request) {
     }
 
     const { searchParams } = new URL(req.url);
-    const type = searchParams.get("type") || "created";
-    const limit = parseInt(searchParams.get("limit") || "5", 10);
+    const limit = parseInt(searchParams.get("limit") || "10", 10);
     const cursor = searchParams.get("cursor");
     const userId = session.user.id;
 
-    if (type === "created") {
-        const meetings = await db.meeting.findMany({
+    const createdMeetings = await db.meeting.findMany({
         where: { creatorId: userId },
         orderBy: { createdAt: "desc" },
-        take: limit + 1,
-        ...(cursor ? { skip: 1, cursor: { id: cursor } } : {}),
-        });
-        
-        const hasMore = meetings.length > limit;
-        const items = hasMore ? meetings.slice(0, -1) : meetings;
+    });
 
-        return NextResponse.json({
+    const participants: (Participant & { meeting: Meeting })[] =
+        await db.participant.findMany({
+        where: {
+            userId,
+            meeting: {
+            NOT: { creatorId: userId },
+            },
+        },
+        include: { meeting: true },
+        orderBy: { joinedAt: "desc" },
+        });
+
+    const joinedMeetings = participants.map((p) => p.meeting);
+
+    const allMeetingsMap = new Map<string, Meeting>();
+    [...createdMeetings, ...joinedMeetings].forEach((m) => {
+        allMeetingsMap.set(m.id, m);
+    });
+
+    const allMeetings = Array.from(allMeetingsMap.values()).sort(
+        (a, b) => b.createdAt.getTime() - a.createdAt.getTime()
+    );
+
+    let startIndex = 0;
+    if (cursor) {
+        const index = allMeetings.findIndex((m) => m.id === cursor);
+        if (index >= 0) startIndex = index + 1;
+    }
+
+    const paginated = allMeetings.slice(startIndex, startIndex + limit + 1);
+    const hasMore = paginated.length > limit;
+    const items = hasMore ? paginated.slice(0, -1) : paginated;
+
+    return NextResponse.json({
         items,
         nextCursor: hasMore ? items[items.length - 1].id : null,
-        });
-    }
-
-    if (type === "joined") {
-        const participants: (Participant & { meeting: Meeting })[] =
-        await db.participant.findMany({
-            where: {
-            userId: userId,
-            // N'inclus pas les réunions où l'utilisateur est le créateur
-            meeting: {
-                NOT: {
-                creatorId: userId,
-                },
-            },
-            },
-            include: { meeting: true },
-            orderBy: { joinedAt: "desc" },
-            take: limit + 1,
-            ...(cursor ? { skip: 1, cursor: { id: cursor } } : {}),
-        });
-
-        const hasMore = participants.length > limit;
-        const items = hasMore ? participants.slice(0, -1) : participants;
-
-        return NextResponse.json({
-        items: items.map((p) => p.meeting),
-        nextCursor: hasMore ? items[items.length - 1].id : null,
-        });
-    }
-
-    return NextResponse.json({ error: "Type invalide" }, { status: 400 });
+    });
 }

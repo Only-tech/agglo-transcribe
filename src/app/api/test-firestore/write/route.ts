@@ -10,8 +10,11 @@ export async function GET() {
     });
 
     return NextResponse.json({ ok: true, id: docRef.id });
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error("Erreur écriture Firestore:", err);
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    if (err instanceof Error) {
+      return NextResponse.json({ error: err.message }, { status: 500 });
+    }
+    return NextResponse.json({ error: "Erreur inconnue" }, { status: 500 });
   }
 }

@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { ChevronUpIcon } from "@heroicons/react/16/solid";
-import { LoadingAnimation } from './LoadingAnimation';
+import  Loader  from '@/app/ui/Loader';
 import { ActionButton } from '@/app/ui/ActionButton';
 
 interface EmailFormProps {
@@ -63,7 +63,7 @@ export const EmailForm = ({ onSubmit, onSkip, isLoading, progress }: EmailFormPr
                 }`}
             >
                 {isLoading ? (
-                    <LoadingAnimation progress={progress} />
+                    <Loader variant='both'  progress={progress} />
                 ) : (
                 <>
                     <ActionButton

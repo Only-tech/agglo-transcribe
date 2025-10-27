@@ -1,5 +1,4 @@
 import React from 'react';
-import { XMarkIcon } from "@heroicons/react/20/solid";
 import { ActionButton, UploadButton } from '@/app/ui/ActionButton';
 import { MicrophoneIcon, MicrophoneSlashIcon } from '@/app/ui/Icons';
 import Loader from '@/app/ui/Loader';

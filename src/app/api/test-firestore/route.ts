@@ -15,10 +15,16 @@ export async function GET() {
       projectId,
       collections: collectionNames,
     });
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error("Erreur test Firestore:", err);
+    if (err instanceof Error) {
+      return NextResponse.json(
+        { error: err.message },
+        { status: 500 }
+      );
+    }
     return NextResponse.json(
-      { error: err.message || "Erreur Firestore" },
+      { error: "Erreur Firestore" },
       { status: 500 }
     );
   }

@@ -2,7 +2,7 @@
 
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Loader from "@/app/ui/Loader";
 import FloatingLabelInput from '@/app/ui/FloatingLabelInput';
 import { ActionButton } from "@/app/ui/ActionButton";
@@ -10,41 +10,57 @@ import { TrashIcon } from "@heroicons/react/20/solid";
 import ConfirmationModal from "@/app/ui/ConfirmationModal";
 
 type Meeting = {
-    id: string;
-    title: string;
-    createdAt: string;
+  id: string;
+  title: string;
+  createdAt: string;
 };
 
-function usePaginatedMeetings(type: "created" | "joined") {
-    const [meetings, setMeetings] = useState<Meeting[]>([]);
-    const [cursor, setCursor] = useState<string | null>(null);
-    const [hasMore, setHasMore] = useState(true);
-    const [loading, setLoading] = useState(false);
+function usePaginatedMeetings() {
+  const [meetings, setMeetings] = useState<Meeting[]>([]);
+  const [cursor, setCursor] = useState<string | null>(null);
+  const [hasMore, setHasMore] = useState(true);
+  const [loading, setLoading] = useState(false);
 
-    const fetchMeetings = async (cursor?: string) => {
+  const fetchMeetings = useCallback(
+        async (cursor?: string) => {
         if (loading) return;
-
         setLoading(true);
-        const url = cursor
-        ? `/api/meetings/history?type=${type}&cursor=${cursor}&limit=5`
-        : `/api/meetings/history?type=${type}&limit=5`;
 
-        const res = await fetch(url);
-        if (res.ok) {
-        const data = await res.json();
-        setMeetings((prev) => [...prev, ...data.items]);
-        setCursor(data.nextCursor);
-        setHasMore(!!data.nextCursor);
+        const url = cursor
+            ? `/api/meetings/history?cursor=${cursor}&limit=10`
+            : `/api/meetings/history?limit=10`;
+
+        try {
+            const res = await fetch(url);
+            if (res.ok) {
+            const data = await res.json();
+
+            setMeetings((prev) => {
+                const merged = [...prev, ...data.items];
+                // dédoublonnage par id
+                const unique = Array.from(new Map(merged.map((m) => [m.id, m])).values());
+                return unique;
+            });
+
+            setCursor(data.nextCursor);
+            setHasMore(!!data.nextCursor);
+            }
+        } finally {
+            setLoading(false);
         }
-        setLoading(false);
-    };
+        },
+        [] 
+    );
 
     useEffect(() => {
         fetchMeetings();
-    }, []);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []); 
 
-    return { meetings, hasMore, cursor, fetchMeetings, loading, setMeetings };
+  return { meetings, hasMore, cursor, fetchMeetings, loading, setMeetings };
 }
+
+
 
 export default function DashboardPage() {
     const { data: session, status } = useSession({ required: true });
@@ -57,15 +73,17 @@ export default function DashboardPage() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
 
-    const created = usePaginatedMeetings("created");
-    const joined = usePaginatedMeetings("joined");
+    const history = usePaginatedMeetings();
+
 
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [meetingToDelete, setMeetingToDelete] = useState<string | null>(null);
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
-        const action = (e.nativeEvent as any).submitter.value;
+        const nativeEvent = e.nativeEvent as SubmitEvent;
+        const submitter = nativeEvent.submitter as HTMLButtonElement;
+        const action = submitter.value;
         setLoading(true);
         setError("");
 
@@ -103,8 +121,12 @@ export default function DashboardPage() {
             }
             await createMeeting();
         }
-        } catch (err: any) {
-        setError(err.message);
+        } catch (err: unknown) {
+            if (err instanceof Error) {
+                setError(err.message);
+            } else {
+                setError("Une erreur inconnue est survenue.");
+            }
         } finally {
         setLoading(false);
         }
@@ -125,9 +147,9 @@ export default function DashboardPage() {
         if (!meetingToDelete) return;
         try {
         await fetch(`/api/meetings/${meetingToDelete}`, { method: "DELETE" });
-        created.setMeetings((prev) => prev.filter((m) => m.id !== meetingToDelete));
-        } catch (err) {
-        console.error("Erreur suppression réunion:", err);
+        history.setMeetings((prev) => prev.filter((m) => m.id !== meetingToDelete));
+        } catch (err: unknown) {
+            console.error("Erreur suppression réunion:", err);
         } finally {
         setIsModalOpen(false);
         setMeetingToDelete(null);
@@ -221,16 +243,16 @@ export default function DashboardPage() {
 
             </form>
 
-            {/* Réunions créées */}
-            <section className="col-span-2 row-span-1 p-2 pl-3.5 rounded-xl bg-white dark:bg-gray-800 border border-gray-300 dark:border-white/10 translate-y-0 hover:-translate-y-1 transform transition-transform duration-700 ease relative md:shadow-lg hover:shadow-[0_12px_15px_rgb(0,0,0,0.3)] dark:shadow-[0_10px_12px_rgb(0,0,0,0.5)] dark:hover:shadow-[0_12px_15px_rgb(0,0,0,0.8)]">
-                <h2 className="text-base md:text-lg font-medium mb-1 text-gray-900 dark:text-white border-b-2 border-gray-300 dark:border-white/10">
-                    Réunions créées
+            {/* Réunions */}
+            <section className="col-span-2 row-span-2 p-2 pl-3.5 rounded-xl bg-white dark:bg-gray-800 border border-gray-300 dark:border-white/10 translate-y-0 hover:-translate-y-1 transform transition-transform duration-700 ease relative md:shadow-lg hover:shadow-[0_12px_15px_rgb(0,0,0,0.3)] dark:shadow-[0_10px_12px_rgb(0,0,0,0.5)] dark:hover:shadow-[0_12px_15px_rgb(0,0,0,0.8)]">
+                <h2 className="text-base md:text-lg font-medium pb-1 mb-2 text-gray-900 dark:text-white border-b-2 border-gray-300 dark:border-white/10">
+                    Historique de réunions
                 </h2>
-                {created.meetings.length === 0 && (
+                {history.meetings.length === 0 && (
                     <p className="text-gray-500">Aucune réunion créée.</p>
                 )}
-                <div className="h-30 overflow-y-auto">
-                    {created.meetings.map((m) => (
+                <div className="h-82 overflow-y-auto">
+                    {history.meetings.map((m) => (
                     <div
                         key={m.id}
                         className="flex justify-between items-center rounded-lg px-2 mb-1 border-b border-gray-300 dark:border-white/10 shadow hover:bg-black/5 dark:hover:bg-black"
@@ -264,49 +286,7 @@ export default function DashboardPage() {
                 </div>
             </section>
 
-            {/* Réunions rejointes */}
-            <section className="col-span-2 row-span-1 p-2 pl-3.5 rounded-xl bg-white dark:bg-gray-800 border border-gray-300 dark:border-white/10 translate-y-0 hover:-translate-y-1 transform transition-transform duration-700 ease relative md:shadow-lg hover:shadow-[0_12px_15px_rgb(0,0,0,0.3)] dark:shadow-[0_10px_12px_rgb(0,0,0,0.5)] dark:hover:shadow-[0_12px_15px_rgb(0,0,0,0.8)]">
-                <h2 className="text-base md:text-lg font-medium mb-1 text-gray-900 dark:text-white border-b-2 border-gray-300 dark:border-white/10">
-                    Réunions rejointes
-                </h2>
-                {joined.meetings.length === 0 && (
-                    <p className="text-gray-500">Aucune réunion rejointe.</p>
-                )}
-                <div className="h-30 overflow-y-auto">
-                    {joined.meetings.map((m) => (
-                    <div
-                        key={m.id}
-                        className="flex justify-between items-center rounded-lg px-2 mb-1 border-b border-gray-300 dark:border-white/10 shadow hover:bg-black/5 dark:hover:bg-black"
-                    >
-                        <div>
-                        <p className="font-medium text-sm mb-0.5">{m.title}</p>
-                        <p className="text-sm text-gray-500">
-                            Créée le {new Date(m.createdAt).toLocaleString("fr-FR")}
-                        </p>
-                        </div>
-                        <ActionButton
-                        onClick={() => router.push(`/meetings/${m.id}`)}
-                        variant="secondary-slide"
-                        size="normal"
-                        className="!w-20 !h-8 !rounded-full text-sm"
-                        >
-                        Ouvrir
-                        </ActionButton>
-                    </div>
-                    ))}
-                </div>
-                {joined.hasMore && (
-                    <ActionButton
-                    onClick={() => joined.fetchMeetings(joined.cursor!)}
-                    disabled={joined.loading}
-                    variant="secondary-slide"
-                    size="normal"
-                    className="mt-4 w-32 h-10"
-                    >
-                    {joined.loading ? "Chargement..." : "Voir plus"}
-                    </ActionButton>
-                )}
-            </section>
+           
             <ConfirmationModal
                 isOpen={isModalOpen}
                 message="Voulez-vous vraiment supprimer cette réunion ? Cette action est irréversible."
