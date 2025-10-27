@@ -68,6 +68,8 @@ agglo-transcripteur/
 │   │   │       ├── [id]
 │   │   │       │   ├── analyze/
 │   │   │       │   │   └── route.ts        # Analyse transcritpion
+│   │   │       │   ├── finalize/
+│   │   │       │   │   └── route.ts        # Envoie la transcritpion au participants
 │   │   │       │   ├── join/
 │   │   │       │   │   └── route.ts        # Rejoindre la réunion
 │   │   │       │   └── participants/

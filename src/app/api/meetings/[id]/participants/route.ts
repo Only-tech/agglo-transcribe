@@ -37,7 +37,7 @@ export async function GET(req: Request, props: { params: Promise<{ id: string }>
             select: {
                 id: true,
                 name: true,
-                image: true, // au cas où avatars
+                image: true, 
             },
             },
         },

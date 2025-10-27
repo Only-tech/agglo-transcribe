@@ -8,7 +8,7 @@ warnings.filterwarnings("ignore", message="FP16 is not supported on CPU*")
 
 
 try:
-    model = whisper.load_model("tiny") # Changez à 'tiny', 'small', 'base', 'medium', 'large'
+    model = whisper.load_model("medium") # Changez à 'tiny', 'small', 'base', 'medium', 'large'
 except Exception as e:
     sys.stderr.write(f"Erreur chargement modèle Whisper: {str(e)}\n")
     sys.exit(1)

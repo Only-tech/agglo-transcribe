@@ -11,6 +11,7 @@ import { TranscriptionDisplay, TranscriptEntry } from "@/app/ui/TranscriptionDis
 import { ArrowDownTrayIcon, Square2StackIcon, CheckIcon, SparklesIcon, XMarkIcon } from "@heroicons/react/24/outline";
 import { ActionButton } from "@/app/ui/ActionButton"; 
 import { UserIcon } from "@heroicons/react/24/solid";
+import ConfirmationModal from "@/app/ui/ConfirmationModal";
 
 // États de l'enregistrement
 enum LiveRecordingState {
@@ -74,6 +75,10 @@ export default function MeetingPageClient({ meetingId, meetingTitle }: { meeting
     const [isUploading, setIsUploading] = useState(false);
     const [progress, setProgress] = useState(0);
 
+    const [showFinalizeModal, setShowFinalizeModal] = useState(false);
+    const [finalizeMessage, setFinalizeMessage] = useState("");
+
+
     // --- Références Audio ---
     const mediaRecorderRef = useRef<MediaRecorder | null>(null);
     const audioContextRef = useRef<AudioContext | null>(null);
@@ -89,20 +94,47 @@ export default function MeetingPageClient({ meetingId, meetingTitle }: { meeting
     const [copiedId, setCopiedId] = useState(false);
     const [copiedLink, setCopiedLink] = useState(false);
 
+    useEffect(() => {
+    if (finalizeMessage) {
+        const timer = setTimeout(() => {
+        setFinalizeMessage("");
+        }, 4000);
+        return () => clearTimeout(timer);
+    }
+    }, [finalizeMessage]);
+
     const copyToClipboard = async (text: string, type: "id" | "link") => {
         try {
-            await navigator.clipboard.writeText(text);
+            if (navigator.clipboard && window.isSecureContext) {
+                await navigator.clipboard.writeText(text);
+            } else {
+                const textarea = document.createElement("textarea");
+                textarea.value = text;
+                textarea.style.position = "fixed";
+                textarea.style.opacity = "0";
+                document.body.appendChild(textarea);
+                textarea.focus();
+                textarea.select();
+                document.execCommand("copy");
+                document.body.removeChild(textarea);
+            }
+
+            if (navigator.vibrate) {
+            navigator.vibrate(50);
+            }
+
             if (type === "id") {
             setCopiedId(true);
             setTimeout(() => setCopiedId(false), 1500);
             } else {
-            setCopiedLink(true);
-            setTimeout(() => setCopiedLink(false), 1500);
+                setCopiedLink(true);
+                setTimeout(() => setCopiedLink(false), 1500);
             }
         } catch (err) {
             console.error("Erreur copie:", err);
         }
     };
+
 
     // --- Récupération des participants ---
     useEffect(() => {
@@ -265,6 +297,10 @@ export default function MeetingPageClient({ meetingId, meetingTitle }: { meeting
     const startRecording = async () => {
         setLiveState(LiveRecordingState.Recording);
         setCurrentText("Écoute en cours...");
+        if (typeof navigator === "undefined" || !navigator.mediaDevices?.getUserMedia) {
+            console.error("getUserMedia non disponible dans cet environnement.");
+            return;
+        }
         try {
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
             streamRef.current = stream;
@@ -399,6 +435,25 @@ export default function MeetingPageClient({ meetingId, meetingTitle }: { meeting
          setIsAnalyzing(false);
      };
 
+    const handleFinalizeMeeting = async () => {
+        setShowFinalizeModal(false);
+        try {
+            const res = await fetch(`/api/meetings/${meetingId}/finalize`, {
+            method: "POST",
+            });
+
+            const result = await res.json();
+            if (res.ok && result.success) {
+            setFinalizeMessage(`Transcription envoyée à ${result.sent} participant(s).`);
+            } else {
+            setFinalizeMessage(`${result.error || "Erreur lors de l'envoi."}`);
+            }
+        } catch (err) {
+            console.error("Erreur finalize:", err);
+            setFinalizeMessage("Erreur réseau ou serveur.");
+        }
+    };
+
     // --- Rendu ---
     // const isLoadingFirestore = status === "loading" || (meetingId && loading);
     const shouldShowLoaderInsteadOfActions =
@@ -437,25 +492,25 @@ export default function MeetingPageClient({ meetingId, meetingTitle }: { meeting
 
                 {/* Bloc de partage de la reunion */}
                 <div className="flex items-center gap-2 mb-6 mx-auto">
-                    <div className="flex items-center flex-wrap rounded-full border border-gray-300 dark:border-white/20 overflow-hidden shadow-lg dark:drop-shadow-[3px_10px_5px_rgba(0,0,0,0.25)]">
+                    <div className="flex relative items-center w-40 rounded-full border border-gray-300 dark:border-white/20 overflow-hidden shadow-lg dark:drop-shadow-[3px_10px_5px_rgba(0,0,0,0.25)]">
                         <span className="text-xs font-mono bg-white dark:bg-gray-800 px-2 py-1 max-md:truncate">
                             {meetingId}
                         </span>
                         <button
                             onClick={() => copyToClipboard(meetingId, "id")}
-                            className=" text-white text-xs px-2 py-1 bg-blue-600 whitespace-nowrap cursor-pointer"
+                            className=" text-white absolute text-xs px-2 py-1 bg-blue-600 whitespace-nowrap cursor-pointer"
                         >
                             {copiedId ? "ID copié !" : "Copier ID"}
                         </button>
                     </div>
 
-                    <div className="flex items-center rounded-full border border-gray-300 dark:border-white/20 overflow-hidden shadow-lg dark:drop-shadow-[3px_10px_5px_rgba(0,0,0,0.25)]">
+                    <div className="flex relative items-center w-40 rounded-full border border-gray-300 dark:border-white/20 overflow-hidden shadow-lg dark:drop-shadow-[3px_10px_5px_rgba(0,0,0,0.25)]">
                         <span className="text-xs font-mono bg-white dark:bg-gray-800 px-2 py-1 max-md:truncate">
                             {meetingUrl}
                         </span>
                         <button
                             onClick={() => copyToClipboard(meetingUrl, "link")}
-                            className=" text-white text-xs px-2 py-1 bg-blue-600 whitespace-nowrap cursor-pointer"
+                            className=" text-white absolute text-xs px-2 py-1 bg-blue-600 whitespace-nowrap cursor-pointer"
                         >
                             {copiedLink ? "Lien copié !" : "Copier lien"}
                         </button>
@@ -607,6 +662,7 @@ export default function MeetingPageClient({ meetingId, meetingTitle }: { meeting
                                         onResume={resumeRecording}
                                         onStop={stopRecording}
                                         onUploadChange={handleUploadChange}
+                                        onFinalize={() => setShowFinalizeModal(true)}
                                     />
                                 )}
                             </div>
@@ -615,6 +671,20 @@ export default function MeetingPageClient({ meetingId, meetingTitle }: { meeting
                 </div>
             </div>
             </div>
+            {showFinalizeModal && (
+                <ConfirmationModal
+                    isOpen={true}
+                    message="Souhaitez-vous envoyer la transcription finale à tous les participants ?"
+                    onConfirm={handleFinalizeMeeting}
+                    onCancel={() => setShowFinalizeModal(false)}
+                />
+                )}
+
+                {finalizeMessage && (
+                <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-2 rounded-lg shadow-lg z-50">
+                    {finalizeMessage}
+                </div>
+            )}
         </div>
     );
 }

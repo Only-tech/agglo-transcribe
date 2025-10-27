@@ -43,7 +43,6 @@ export async function POST(req: Request) {
     const mime = file.type;
     let ext = "tmp"; // Extension générique
     if (mime.includes("webm")) ext = "webm";
-    else if (mime.includes("ogg")) ext = "ogg";
     else if (mime.includes("mp4") || mime.includes("m4a")) ext = "m4a";
     else if (mime.includes("mpeg")) ext = "mp3";
     else if (mime.includes("wav")) ext = "wav";
@@ -53,7 +52,7 @@ export async function POST(req: Request) {
     await writeFile(rawPath, buffer);
 
     const stats = await stat(rawPath);
-    if (stats.size < 1000) { // Le seuil est baissé pour les petits chunks
+    if (stats.size < 1000) { // Seuil baissé pour les petits chunks
       await unlink(rawPath);
       return NextResponse.json({ error: "Fichier audio trop court ou incomplet." }, { status: 400 });
     }
@@ -65,21 +64,14 @@ export async function POST(req: Request) {
       await unlink(rawPath);
     }
 
-    // Chemin vers Python multi-plateforme (Windows, Mac, Linux)
-    const projectRoot = process.cwd(); 
-    const isWindows = process.platform === "win32";
-    const pythonExecutable = isWindows ? "python.exe" : "python";
-    
-    // Chemin vers le venv
-    const pythonVenvPath = isWindows 
-      ? path.join(projectRoot, ".venv", "Scripts", pythonExecutable)
-      : path.join(projectRoot, ".venv", "bin", pythonExecutable);
+    const pythonExecutable = "python3";
       
-    const scriptPath = path.resolve(projectRoot, "transcribe.py");
+    const scriptPath = path.resolve(process.cwd(), "transcribe.py");
 
     const result: string = await new Promise((resolve, reject) => {
       let output = "";
-      const whisper = spawn(pythonVenvPath, [scriptPath, wavPath]);
+      // 'python3' dans le PATH de l'image Docker
+      const whisper = spawn(pythonExecutable, [scriptPath, wavPath]);
 
       whisper.stdout.on("data", (data) => {
         output += data.toString();

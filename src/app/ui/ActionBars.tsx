@@ -2,7 +2,7 @@ import React from 'react';
 import { ActionButton, UploadButton } from '@/app/ui/ActionButton';
 import { MicrophoneIcon, MicrophoneSlashIcon } from '@/app/ui/Icons';
 import Loader from '@/app/ui/Loader';
-import { StopIcon } from '@heroicons/react/24/solid';
+import { PaperAirplaneIcon, StopIcon } from '@heroicons/react/24/solid';
 
 interface ActionBarsProps {
     liveState: 'Recording' | 'Paused' | 'Idle' | 'Finished';
@@ -13,9 +13,11 @@ interface ActionBarsProps {
     onResume: () => void;
     onStop: () => void;
     onUploadChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+    onFinalize?: () => void;
+
 }
 
-export const ActionBars = ({ liveState, isLoading, progress, onStart, onPause, onResume, onStop, onUploadChange }: ActionBarsProps) => {
+export const ActionBars = ({ liveState, isLoading, progress, onStart, onPause, onResume, onStop, onUploadChange, onFinalize, }: ActionBarsProps) => {
     const isRecording = liveState === 'Recording';
     const isPaused = liveState === 'Paused';
     const showBottomBar = isRecording || isPaused;
@@ -57,6 +59,18 @@ export const ActionBars = ({ liveState, isLoading, progress, onStart, onPause, o
                 <ActionButton variant="primary" size="large" onClick={onStart} title="Démarrer l'écoute">
                     <MicrophoneIcon className="size-6" />
                 </ActionButton>
+
+                {liveState === 'Finished' && onFinalize && (
+                    <ActionButton
+                        variant="icon"
+                        size="small"
+                        onClick={onFinalize}
+                        title="Envoyer la transcription"
+                        className='absolute right-4'
+                    >
+                        <PaperAirplaneIcon className="size-6 -rotate-35"/>
+                    </ActionButton>
+                )}
             </div>
         )}
         </div>
