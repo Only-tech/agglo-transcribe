@@ -57,7 +57,7 @@ RUN npm install --production
 RUN pip3 install --no-cache-dir -r requirements.txt --break-system-packages
 
 # Pré-télécharge le modèle Whisper pendant la construction de l'image
-RUN python3 -c "import whisper; whisper.load_model('base')"
+RUN python3 -c "import whisper; whisper.load_model('medium')"
 
 EXPOSE 3000
 
