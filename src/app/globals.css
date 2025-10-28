@@ -1,0 +1,191 @@
+@import "tailwindcss";
+
+/* ========= dark Variant & theme =======  */
+@variant dark (&:where(.dark &));
+
+:root {
+  --background: linear-gradient(to bottom left, #fff, #fcfff7, #fff);
+  --foreground: #171717;
+}
+
+.dark {
+  --background: linear-gradient(to bottom left, #000, #1E1E1E, #000);
+  --foreground: #ededed;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+html {
+  color-scheme: light;
+}
+
+html.dark {
+  color-scheme: dark;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+/* ======== ScrollBar =========== */
+:root {
+  --h-scrollbar-thumb-color: rgb(172, 170, 170);
+  --h-scrollbar-track-color: transparent;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--h-scrollbar-track-color);
+  margin: 1.5rem 0;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--h-scrollbar-track-color);
+  border-left: 3px solid var(--h-scrollbar-thumb-color);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #f5f5dc !important;
+  border: 2px solid var(--h-scrollbar-thumb-color);
+  border-radius: 5px;
+}
+
+/* ==== Animation ronds dans le loading ===== */
+@keyframes dot-bounce {
+
+  0%,
+  80%,
+  100% {
+    transform: scale(0.6);
+    opacity: 0.6;
+  }
+
+  40% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.animate-dot-bounce-1 {
+  animation: dot-bounce 1.4s infinite ease-in-out;
+}
+
+.animate-dot-bounce-2 {
+  animation: dot-bounce 1.4s infinite ease-in-out 0.2s;
+}
+
+.animate-dot-bounce-3 {
+  animation: dot-bounce 1.4s infinite ease-in-out 0.4s;
+}
+
+/* ==== Forme squircle ==== */
+:root {
+  --clip-path-squircle-60: polygon(0px 120px,
+      .2926114347613975px 76.01693427552313px,
+      1.1726170703615537px 60.29422812258654px,
+      2.646737302862107px 48.79561476139696px,
+      4.7268967341249635px 39.546913005102155px,
+      7.431447305256768px 31.81593046346407px,
+      10.787202305502689px 25.242897384862104px,
+      14.832739587064495px 19.623850275977063px,
+      19.623850275977063px 14.832739587064495px,
+      25.242897384862104px 10.787202305502689px,
+      31.815930463464056px 7.431447305256782px,
+      39.54691300510214px 4.7268967341249635px,
+      48.79561476139695px 2.646737302862107px,
+      60.294228122586546px 1.1726170703615537px,
+      76.01693427552313px .2926114347613975px,
+      119.99999252872091px 0px,
+      calc(100% - 119.99999px) 0px,
+      calc(100% - 76.01693px) .2926114347613975px,
+      calc(100% - 60.29423px) 1.1726170703615537px,
+      calc(100% - 48.79561px) 2.646737302862107px,
+      calc(100% - 39.54691px) 4.7268967341249635px,
+      calc(100% - 31.81593px) 7.431447305256782px,
+      calc(100% - 25.2429px) 10.787202305502689px,
+      calc(100% - 19.62385px) 14.832739587064495px,
+      calc(100% - 14.83274px) 19.623850275977063px,
+      calc(100% - 10.7872px) 25.242897384862104px,
+      calc(100% - 7.43145px) 31.81593046346407px,
+      calc(100% - 4.7269px) 39.546913005102155px,
+      calc(100% - 2.64674px) 48.79561476139696px,
+      calc(100% - 1.17262px) 60.29422812258654px,
+      calc(100% - .29261px) 76.01693427552313px,
+      100% 120px,
+      100% calc(100% - 120px),
+      calc(100% - .29261px) calc(100% - 76.01693px),
+      calc(100% - 1.17262px) calc(100% - 60.29423px),
+      calc(100% - 2.64674px) calc(100% - 48.79561px),
+      calc(100% - 4.7269px) calc(100% - 39.54691px),
+      calc(100% - 7.43145px) calc(100% - 31.81593px),
+      calc(100% - 10.7872px) calc(100% - 25.2429px),
+      calc(100% - 14.83274px) calc(100% - 19.62385px),
+      calc(100% - 19.62385px) calc(100% - 14.83274px),
+      calc(100% - 25.2429px) calc(100% - 10.7872px),
+      calc(100% - 31.81593px) calc(100% - 7.43145px),
+      calc(100% - 39.54691px) calc(100% - 4.7269px),
+      calc(100% - 48.79561px) calc(100% - 2.64674px),
+      calc(100% - 60.29423px) calc(100% - 1.17262px),
+      calc(100% - 76.01693px) calc(100% - .29261px),
+      calc(100% - 119.99999px) 100%,
+      119.99999252872091px 100%,
+      76.01693427552313px calc(100% - .29261px),
+      60.294228122586546px calc(100% - 1.17262px),
+      48.79561476139695px calc(100% - 2.64674px),
+      39.54691300510214px calc(100% - 4.7269px),
+      31.815930463464056px calc(100% - 7.43145px),
+      25.242897384862104px calc(100% - 10.7872px),
+      19.623850275977063px calc(100% - 14.83274px),
+      14.832739587064495px calc(100% - 19.62385px),
+      10.787202305502689px calc(100% - 25.2429px),
+      7.431447305256768px calc(100% - 31.81593px),
+      4.7268967341249635px calc(100% - 39.54691px),
+      2.646737302862107px calc(100% - 48.79561px),
+      1.1726170703615537px calc(100% - 60.29423px),
+      .2926114347613975px calc(100% - 76.01693px),
+      0px calc(100% - 120px),
+      0px 120px);
+}
+
+
+/* ========== Display Demo Transcribe ============ */
+@keyframes fadeInUp {
+  0% {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fadeInUp {
+  animation: fadeInUp 0.6s ease-out forwards;
+}
+
+@keyframes fadeOutDown {
+  0% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+}
+
+.animate-fadeOutDown {
+  animation: fadeOutDown 0.4s ease-in forwards;
+}

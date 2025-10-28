@@ -1,0 +1,13 @@
+services:
+  transcribe-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        FIREBASE_SERVICE_ACCOUNT_KEY: ${FIREBASE_SERVICE_ACCOUNT_KEY}
+    container_name: transcribe_app
+    ports:
+      - "3000:3000"
+    restart: unless-stopped
+    env_file:
+      - .env
