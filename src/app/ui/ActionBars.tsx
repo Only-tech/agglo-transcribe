@@ -60,7 +60,7 @@ export const ActionBars = ({ liveState, isLoading, progress, onStart, onPause, o
                     <MicrophoneIcon className="size-6" />
                 </ActionButton>
 
-                {liveState === 'Finished' && onFinalize && (
+                {( (liveState === 'Finished' || progress === 100) && onFinalize ) && (
                     <ActionButton
                         variant="icon"
                         size="small"

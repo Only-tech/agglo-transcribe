@@ -61,7 +61,7 @@ agglo-transcripteur/
 │   │   │   │   │   └── route.ts            # Transcrition depuis Interface principale
 │   │   │   │   ├── file/
 │   │   │   │   │   └── route.ts            # Transcription fichier audio
-│   │   │   │   └── route.ts                # Englobe les transcriptions
+│   │   │   │   └── route.ts                # Englobe les transcriptions  (il n'est pas utilisé ici, j'ai déplacé sa logique à audioProcessing.ts)
 │   │   │   ├── send-email/
 │   │   │   │   └── route.ts                # API pour l'envoi d'e-mails
 │   │   │   └── meetings/
@@ -179,6 +179,13 @@ NEXT_PUBLIC_FIREBASE_APP_ID="..."
 
 # API Gemini (résumés IA)
 GEMINI_API_KEY="..."
+
+# Configuration transporteur
+SMTP_HOST="smtp.gmail.com"
+SMTP_PORT=587
+SMTP_SECURE=false
+SMTP_USER="votre.email@gmail.com"
+SMTP_PASS="votre-mot-de-passe-d-application"
 ```
 
 Préparation des Backends
@@ -263,7 +270,7 @@ ffmpeg -version
 Si déploiement avec Docker, regarder les fichiers _Dockerfile_ et _docker-compose.yml_
 
 ```bash
-docker-compose up --build
+docker compose up --build
 ```
 
 NB: Au besoin vous pouvez installer les dépendances node.js en entrant la commande ci dessous si besoin de modifier immédiatement le ux, mais ces dépendances seront déjà présentes dans le conteneur Docker.

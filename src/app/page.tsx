@@ -7,6 +7,7 @@ import { ChevronUpIcon } from '@heroicons/react/16/solid';
 import Loader from "@/app/ui/Loader";
 import { ActionButton, UploadButton } from "@/app/ui/ActionButton";
 import { TranscriptionDisplay, TranscriptEntry } from "@/app/ui/TranscriptionDisplay";
+import { ArrowDownTrayIcon, CheckIcon } from "@heroicons/react/24/outline";
 
 export default function HomePage() {
     const { data: session, status } = useSession();
@@ -25,6 +26,7 @@ export default function HomePage() {
     const [currentText, setCurrentText] = useState("");
     const [isFirstUploadDone, setIsFirstUploadDone] = useState(false);
     const [isUploading, setIsUploading] = useState(false);
+    const [downloaded, setDownloaded] = useState(false);
 
     // --- Animations intro ---
     useEffect(() => {
@@ -121,6 +123,25 @@ export default function HomePage() {
         );
     };
 
+    const handleDownload = () => {
+        const text = sessions
+            .map((e) => {
+            const time = new Date(e.timestamp).toLocaleString("fr-FR");
+            return `[${time}] ${e.userName}:\n${e.text}`;
+            })
+            .join("\n\n");
+
+        const blob = new Blob([text], { type: "text/plain" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `transcription-demo.txt`;
+        a.click();
+        URL.revokeObjectURL(url);
+        setDownloaded(true);
+        setTimeout(() => setDownloaded(false), 1200);
+    };
+
     // --- Rendu ---
     if (status === "loading") {
         return <div className="text-center p-10"><p>Chargement</p><Loader variant="dots" /></div>;
@@ -186,6 +207,18 @@ export default function HomePage() {
                                 )
                             ) : (
                                 <div className="flex gap-6 animate-fadeInUp">
+                                    {(sessions.length > 0 || currentText) && (
+                                        <ActionButton
+                                            variant="icon"
+                                            size="small"
+                                            onClick={handleDownload}
+                                            className="size-12"
+                                            title="Télécharger le .txt"
+                                        >
+                                            {downloaded ? <CheckIcon className="size-6 mx-auto text-blue-800" /> : <ArrowDownTrayIcon className="size-6 mx-auto" />}
+                                        </ActionButton>
+                                    )}
+
                                     <UploadButton
                                         onFileSelected={handleDemoUpload}
                                         title="Uploader un autre fichier"
