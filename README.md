@@ -168,6 +168,7 @@ NEXTAUTH_URL="http://localhost:3000", le domaine si production
 FIREBASE_PROJECT_ID="..."
 FIREBASE_CLIENT_EMAIL="..."
 FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n"
+# J'ai mis tout Firebase Admin dans FIREBASE_SERVICE_ACCOUNT_KEY={}, cette serie vient en fichier JSON, on l'a lors de l'initialisation du projet dans firestore.
 
 # Firebase Client (navigateur)
 NEXT_PUBLIC_FIREBASE_API_KEY="..."
