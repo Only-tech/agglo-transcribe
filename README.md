@@ -1,6 +1,6 @@
 # 🎙️ Transcripteur Audio & Gestion de Réunions
 
-Cette application web combine **transcription audio en temps réel** (via OpenAI Whisper) et **gestion collaborative de réunions** (via Supabase, Firebase et NextAuth).  
+Cette application web combine **transcription audio en temps réel** (via OpenAI Whisper) et **gestion collaborative de réunions** (via pgAdmin et NextAuth).  
 Elle permet de créer/rejoindre des réunions, d’enregistrer et transcrire l’audio, puis de générer des résumés automatiques grâce à l’IA.
 
 ---
@@ -9,10 +9,10 @@ Elle permet de créer/rejoindre des réunions, d’enregistrer et transcrire l�
 
 - **Transcription en direct** depuis le micro ou un fichier audio (Whisper + FFmpeg).
 - **Gestion des réunions** : création, participation, historique, suppression.
-- **Authentification sécurisée** avec NextAuth (credentials + Firebase).
-- **Base de données PostgreSQL (Supabase)** pour stocker les réunions, participants et analyses.
+- **Authentification sécurisée** avec NextAuth (credentials).
+- **Base de données PostgreSQL pgAdmin** pour stocker les réunions, participants et analyses.
 - **Stockage et synchronisation Firebase** (Firestore pour transcripts, Storage pour fichiers).
-- **Analyse IA (Gemini)** pour générer résumés, thèmes et actions à partir des transcriptions.
+- **Analyse IA (Ollama)** pour générer résumés, thèmes et actions à partir des transcriptions.
 - **Interface moderne** avec Next.js 15, React, TypeScript et Tailwind CSS.
 - **Export & partage** : copier, télécharger, ou envoyer par e‑mail les transcriptions.
 
@@ -30,11 +30,10 @@ Elle permet de créer/rejoindre des réunions, d’enregistrer et transcrire l�
 ### Backend
 
 - **Next.js API Routes**
-- **Supabase (PostgreSQL)** pour la persistance des données
-- **Firebase Admin SDK** pour la gestion des transcripts et stockage
+- **pgAdmin (PostgreSQL)** pour la persistance des données, gestion des transcripts et stockage
 - **Python + Whisper** pour la transcription audio
 - **FFmpeg** pour la conversion audio
-- **Gemini API** pour l’analyse et le résumé
+- **Ollama IA** pour l’analyse et le résumé
 - **Docker** pour la portabilité de l'application
 
 ---
@@ -59,15 +58,16 @@ agglo-transcripteur/
 │   │   │   │   │   └── route.ts            # Traitement des bouts audio
 │   │   │   │   ├── demo/
 │   │   │   │   │   └── route.ts            # Transcrition depuis Interface principale
-│   │   │   │   ├── file/
-│   │   │   │   │   └── route.ts            # Transcription fichier audio
-│   │   │   │   └── route.ts                # Englobe les transcriptions  (il n'est pas utilisé ici, j'ai déplacé sa logique à audioProcessing.ts)
-│   │   │   ├── send-email/
-│   │   │   │   └── route.ts                # API pour l'envoi d'e-mails
+│   │   │   │   └──  file/
+│   │   │   │       └── route.ts            # Transcription fichier audio
 │   │   │   └── meetings/
 │   │   │       ├── [id]
 │   │   │       │   ├── analyze/
 │   │   │       │   │   └── route.ts        # Analyse transcritpion
+│   │   │       │   ├── entries/
+│   │   │       │   │   ├── [entryId]/
+│   │   │       │   │   │   └── route.ts    # Enregistre transcritpion dans la base de données
+│   │   │       │   │   └── route.ts        # Enregistre transcritpion
 │   │   │       │   ├── finalize/
 │   │   │       │   │   └── route.ts        # Envoie la transcritpion au participants
 │   │   │       │   ├── join/
@@ -81,8 +81,7 @@ agglo-transcripteur/
 │   │   │   ├── aiService.ts                # Utile pour l'analyse avec l'IA
 │   │   │   ├── audioProcessing.ts          # Transcription
 │   │   │   ├── db.ts                       # Assure la liéson prisma base de données
-│   │   │   ├── firestore-client.ts         # Pour échanges rapide de données lors de la transcription et analyse
-│   │   │   └── firestore.ts
+│   │   │   └── auth/options.ts             # Eléments de connexions
 │   │   ├── ui/                             # Composants
 │   │   │   ├── AuthStatus.tsx              # Statut d'authentification
 │   │   │   ├── ActionBars.tsx              # Englobant les actions boutons
@@ -101,7 +100,6 @@ agglo-transcripteur/
 │   │   ├── register/
 │   │   │   └── page.tsx                    # Interface d'inscription
 │   │   ├── login/
-│   │   │   ├── LoginForm.tsx               # formulaire pour inscription
 │   │   │   └── page.tsx                    # Interface de connexion
 │   │   ├── meetings/
 │   │   │   └── [id]
@@ -122,11 +120,12 @@ agglo-transcripteur/
 ├── README.md                      # Ce fichier
 ├── requirements.txt               # OpenAI Whisper
 ├── Dockerfile                     # Script d'installation de l'application et des dépendances des langages utilisés
+├── Dockerfile.ollama              # Script d'installation du service IA ollama
 ├── docker-compose.yml             # Configuration du conteneur et de l'environement de l'application
-├── requirements.txt               # OpenAI Whisper
+├── init.sql                       # Tables base de données
+├── entrypoint.sh                  # Utile à l'installation de ollama IA
 ├── LICENSE.md                     # Licence du projet
 ├── transcribe.py                  # Script Python qui utilise Whisper pour la transcription
-├── schema.prisma                  # Assure la création des tables et le flux de données
 ├── middleware.ts                  # Protection des routes sensibles
 └── tsconfig.json                  # Configuration TypeScript
 ```
@@ -146,7 +145,7 @@ Assurez-vous d'avoir **Docker** installé et accessible depuis votre terminal ou
 - **Clonez le dépôt du projet**
 
 ```bash
-git clone  --branch mainRefact --single-branch https://github.com/Only-tech/agglo-transcribe.git
+git clone https://github.com/Only-tech/agglo-transcribe.git
 cd agglo-transcribe
 ```
 
@@ -157,29 +156,15 @@ cd agglo-transcribe
 Créez un fichier `.env.local` à la racine avec :
 
 ```bash
-# Base de données PostgreSQL (Supabase)
-DATABASE_URL="postgresql://postgres:password@host:5432/dbname"
+# Base de données PostgreSQL pgAdmin
+DATABASE_URL="postgresql://dbcontainer:password@host:5432/dbname"
 
 # NextAuth
 NEXTAUTH_SECRET="clé_secrète"
 NEXTAUTH_URL="http://localhost:3000", le domaine si production
 
-# Firebase Admin (serveur)
-FIREBASE_PROJECT_ID="..."
-FIREBASE_CLIENT_EMAIL="..."
-FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n"
-# J'ai mis tout Firebase Admin dans FIREBASE_SERVICE_ACCOUNT_KEY={}, cette serie vient en fichier JSON, on l'a lors de l'initialisation du projet dans firestore.
-
-# Firebase Client (navigateur)
-NEXT_PUBLIC_FIREBASE_API_KEY="..."
-NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN="..."
-NEXT_PUBLIC_FIREBASE_PROJECT_ID="..."
-NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET="..."
-NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID="..."
-NEXT_PUBLIC_FIREBASE_APP_ID="..."
-
-# API Gemini (résumés IA)
-GEMINI_API_KEY="..."
+# Pour les résumés IA
+OLLAMA_API_URL="..."
 
 # Configuration transporteur
 SMTP_HOST="smtp.gmail.com"
@@ -187,27 +172,6 @@ SMTP_PORT=587
 SMTP_SECURE=false
 SMTP_USER="votre.email@gmail.com"
 SMTP_PASS="votre-mot-de-passe-d-application"
-```
-
-Préparation des Backends
-
-1. Supabase (PostgreSQL)
-   Créez un projet sur Supabase.
-
-Récupérez l’URL de connexion PostgreSQL dans Project Settings → Database → Connection string.
-
-Mettez-la dans .env.local.
-
-Appliquez les migrations Prisma, fichier à la racine :
-
-```bash
-npx prisma migrate dev`
-```
-
-Vérifiez la connexion :
-
-```bash
-npx prisma studio
 ```
 
 2. NextAuth
@@ -224,32 +188,20 @@ NEXTAUTH_SECRET="clé_générée"
 NEXTAUTH_URL="http://localhost:3000"
 ```
 
----
+- **Installez le projets, ses langages, ses dépendances**
 
-3. Firebase
-   a) Admin SDK (serveur)
-   Dans la console Firebase, créez un compte de service (Settings → Service accounts).
+Regardez les fichiers _Dockerfile_, _Dockerfile.ollama_ et _docker-compose.yml_
 
-Téléchargez le JSON et copie les champs dans .env.local.
-
-b) Client SDK (navigateur)
-Dans Firebase → Project Settings → Web App, copie les clés dans .env.local.
-
----
-
-4. Gemini API
-   Activez l’API Gemini sur Google AI Studio.
-
-Créez une clé API et ajoute-la dans .env.local :
+(Le script Dockerfile va automatiser l'installation de Node.js, Python, whisper,Ollama, ffmpeg, et toutes leurs dépendances, l'application sera lancée à la fin de l'installation)
 
 ```bash
-GEMINI_API_KEY="..."
+docker compose up --build
 ```
 
 ---
 
-5. FFmpeg
-   Installe FFmpeg localement :
+FFmpeg
+Installe FFmpeg localement :
 
 macOS : brew install ffmpeg
 
@@ -264,15 +216,6 @@ ffmpeg -version
 ```
 
 ---
-
-- **Installez le projets, ses langages, ses dépendances**
-  (Le script Dockerfile va automatiser l'installation de Node.js, Python, whisper, ffmpeg, et toutes leurs dépendances, l'application sera lancée à la fin de l'installation)
-
-Si déploiement avec Docker, regarder les fichiers _Dockerfile_ et _docker-compose.yml_
-
-```bash
-docker compose up --build
-```
 
 NB: Au besoin vous pouvez installer les dépendances node.js en entrant la commande ci dessous si besoin de modifier immédiatement le ux, mais ces dépendances seront déjà présentes dans le conteneur Docker.
 

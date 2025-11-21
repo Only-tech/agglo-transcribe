@@ -72,6 +72,9 @@ export default function MeetingPageClient({ meetingId, meetingTitle }: { meeting
     const animationFrameRef = useRef<number | null>(null);
     const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
+    // État pour savoir si un morceau (audio) est en train d'être envoyé au serveur
+    const [isProcessingChunk, setIsProcessingChunk] = useState(false);
+
     // --- Copie/Partage lien de la réunion
     const meetingUrl = typeof window !== "undefined" ? `${window.location.origin}/meetings/${meetingId}` : "";
 
@@ -298,19 +301,30 @@ export default function MeetingPageClient({ meetingId, meetingTitle }: { meeting
 
     // --- Envoi des chunks live ---
     const sendChunk = async (blob: Blob) => {
+        // Signale à l'UI qu'on traite un segment
+        setIsProcessingChunk(true);
+
         const formData = new FormData();
         formData.append("audio", blob, "chunk.webm");
         formData.append("meetingId", meetingId);
         try {
-            await fetch("/api/transcribe/chunk", { method: "POST", body: formData });
+            const res = await fetch("/api/transcribe/chunk", { method: "POST", body: formData });
+            if (!res.ok) console.error("Erreur serveur sur le chunk");
+            // Attend que le polling (fetchEntries) récupère le nouveau texte.
         } catch (err) {
             console.error("Erreur envoi chunk:", err);
+        } finally {
+            // Fin du traitement, l'IA prend le relais côté serveur
+            setIsProcessingChunk(false);
         }
     };
 
     // --- Recording controls ---
-    const startRecording = async () => {
+    const startRecording = async (timeslice = 15000) => {
         setLiveState(LiveRecordingState.Recording);
+        // Stocke la fréquence choisie pour info
+        console.log(`Démarrage avec fréquence : ${timeslice}ms`);
+
         setCurrentText("Écoute en cours...");
         if (typeof navigator === "undefined" || !navigator.mediaDevices?.getUserMedia) {
             console.error("getUserMedia non disponible dans cet environnement.");
@@ -320,6 +334,7 @@ export default function MeetingPageClient({ meetingId, meetingTitle }: { meeting
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
             streamRef.current = stream;
 
+            // Setup Audio Context & Visualizer
             const context = new AudioContext();
             audioContextRef.current = context;
             const source = context.createMediaStreamSource(stream);
@@ -341,7 +356,7 @@ export default function MeetingPageClient({ meetingId, meetingTitle }: { meeting
                 }
             };
 
-            recorder.start(15000);
+            recorder.start(timeslice);
         } catch (error) {
             console.error("Erreur d'accès au micro:", error);
             setLiveState(LiveRecordingState.Idle);
@@ -663,6 +678,7 @@ export default function MeetingPageClient({ meetingId, meetingTitle }: { meeting
                                         currentUserId={session?.user?.id}
                                         currentText={currentText}
                                         onEdit={handleEditEntry}
+                                        isProcessingChunk={isProcessingChunk}
                                     />
 
                                     {/* Loader dots pour uploads suivants */}

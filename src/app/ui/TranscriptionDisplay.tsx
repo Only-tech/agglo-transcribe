@@ -20,6 +20,7 @@ interface TranscriptionDisplayProps {
     currentUserId?: string;
     currentText?: string;
     onEdit: (entryId: string, newText: string) => Promise<void>;
+    isProcessingChunk?: boolean;
 }
 
 // --- EditableEntry ---
@@ -160,8 +161,12 @@ export const TranscriptionDisplay = ({
     currentUserId,
     currentText,
     onEdit,
+    isProcessingChunk = false,
 }: TranscriptionDisplayProps) => {
     const messagesEndRef = useRef<HTMLDivElement | null>(null);
+
+    // Bloque le scroll quand c'est le code qui scroll
+    const isAutoScrolling = useRef(false);
 
     const [displayedP, setDisplayedP] = useState("");
     // Savoir si scroll manuel vers le haut
@@ -173,6 +178,9 @@ export const TranscriptionDisplay = ({
 
     // --- Gère le scroll manuel ---
     const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+        // Ignore si le code qui scroll
+        if (isAutoScrolling.current) return;
+
         const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
         
         // En bas à moins de 50px du fond
@@ -209,13 +217,21 @@ export const TranscriptionDisplay = ({
         }
 
         if (messagesEndRef.current) {
+            isAutoScrolling.current = true;
             // Scroll vers le bas
             messagesEndRef.current.scrollTo({
                 top: messagesEndRef.current.scrollHeight,
                 behavior: 'smooth' 
             });
+
+            // Désactive le flag après l'animation
+            const timeout = setTimeout(() => {
+                isAutoScrolling.current = false;
+            }, 500);
+            
+            return () => clearTimeout(timeout);
         }
-    }, [entries, currentText, userHasScrolledUp, isAnyEntryEditing]);
+    }, [entries, currentText, userHasScrolledUp, isAnyEntryEditing, isProcessingChunk]);
 
     return (
         <div
@@ -241,14 +257,16 @@ export const TranscriptionDisplay = ({
 
             {currentText && (
                 <>
-                    <div className="max-w-[85%] p-3 rounded-2xl shadow-md ml-auto bg-blue-200 dark:bg-blue-600 text-gray-900 dark:text-white animate-pulse">
+                    <div className="max-w-[85%] p-3 rounded-2xl shadow-md ml-auto bg-blue-200 dark:bg-blue-600 text-gray-900 dark:text-white animate-pulse transition-all duration-500">
                         <p className="flex justify-between items-center mb-1">
                             <span className="text-xs font-semibold text-gray-600 dark:text-gray-300">Vous</span>
-                            <span className="text-[10px] text-gray-400 ml-2">En cours…</span>
+                            <span className="text-[10px] text-gray-400 ml-2">
+                                {isProcessingChunk ? "Analyse en cours..." : "En cours..."}
+                            </span>
                         </p>
-                        <p className="whitespace-pre-wrap text-sm">{currentText}</p>
+                        <p className="whitespace-pre-wrap text-sm">{isProcessingChunk ? "Traitement du segment audio..." :currentText}</p>
                     </div>
-                    <Loader variant="dots" />
+                    <Loader variant="dots"className={isProcessingChunk ? "text-purple-500" : "text-gray-500"} />
                 </>
             )}
         </div>

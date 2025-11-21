@@ -3,11 +3,12 @@
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { ChevronUpIcon } from '@heroicons/react/16/solid';
+import { ChevronUpIcon, ClockIcon } from '@heroicons/react/16/solid';
 import Loader from "@/app/ui/Loader";
 import { ActionButton, UploadButton } from "@/app/ui/ActionButton";
 import { TranscriptionDisplay, TranscriptEntry } from "@/app/ui/TranscriptionDisplay";
 import { ArrowDownTrayIcon, CheckIcon } from "@heroicons/react/24/outline";
+import { MicrophoneIcon, MicrophoneSlashIcon } from '@/app/ui/Icons';
 
 export default function HomePage() {
     const { data: session, status } = useSession();
