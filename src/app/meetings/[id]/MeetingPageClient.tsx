@@ -1,14 +1,12 @@
 'use client';
 
-import { useState, useRef, useEffect, useCallback, useMemo } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { useSession } from "next-auth/react";
-import { useCollection } from "react-firebase-hooks/firestore";
-import { firestore } from "@/app/lib/firestore-client";
-import { collection, query, orderBy, doc, updateDoc } from "firebase/firestore";
 import Loader from "@/app/ui/Loader";
 import { ActionBars } from "@/app/ui/ActionBars";
 import { TranscriptionDisplay, TranscriptEntry } from "@/app/ui/TranscriptionDisplay";
-import { ArrowDownTrayIcon, Square2StackIcon, CheckIcon, SparklesIcon, XMarkIcon } from "@heroicons/react/24/outline";
+import { ArrowDownTrayIcon, Square2StackIcon, CheckIcon, SparklesIcon as SparklesOutlineIcon, XMarkIcon } from "@heroicons/react/24/outline";
+import { SparklesIcon as SparklesSolidIcon } from "@heroicons/react/24/solid";
 import { ActionButton } from "@/app/ui/ActionButton"; 
 import { UserIcon } from "@heroicons/react/24/solid";
 import ConfirmationModal from "@/app/ui/ConfirmationModal";
@@ -46,24 +44,9 @@ export default function MeetingPageClient({ meetingId, meetingTitle }: { meeting
     const [currentText, setCurrentText] = useState("");
     const [isFirstUploadDone, setIsFirstUploadDone] = useState(false);
 
-    // --- Firestore & Transcription ---
-    const firestoreCollectionId = meetingId;
-    const [entriesSnapshot, , error] = useCollection(
-        meetingId ?
-        query(
-            collection(firestore, `meetings/${firestoreCollectionId}/entries`),
-            orderBy("timestamp", "asc")
-        )
-        : null
-    );
-
-    const transcriptEntries: TranscriptEntry[] = useMemo(
-        () =>
-            entriesSnapshot?.docs.map(
-                (d) => ({ id: d.id, ...d.data() } as TranscriptEntry)
-            ) || [],
-        [entriesSnapshot]
-    );
+    // Polling pour récupérer les entrées
+    const [transcriptEntries, setTranscriptEntries] = useState<TranscriptEntry[]>([]);
+    const [error, setError] = useState<Error | null>(null);
 
     // --- UI ---
     const [copied, setCopied] = useState(false);
@@ -77,6 +60,7 @@ export default function MeetingPageClient({ meetingId, meetingTitle }: { meeting
 
     const [showFinalizeModal, setShowFinalizeModal] = useState(false);
     const [finalizeMessage, setFinalizeMessage] = useState("");
+    const [isSendingEmail, setIsSendingEmail] = useState(false);
 
 
     // --- Références Audio ---
@@ -94,15 +78,46 @@ export default function MeetingPageClient({ meetingId, meetingTitle }: { meeting
     const [copiedId, setCopiedId] = useState(false);
     const [copiedLink, setCopiedLink] = useState(false);
 
+    // Polling pour récupérer les entrées
+    useEffect(() => {
+        if (!meetingId || status !== "authenticated") return;
+
+        let isMounted = true;
+        
+        const fetchEntries = async () => {
+            try {
+                const res = await fetch(`/api/meetings/${meetingId}/entries`);
+                if (!res.ok) throw new Error("Erreur réseau lors de la récupération des entrées");
+                const data = await res.json();
+                if (isMounted) {
+                    setTranscriptEntries(data.entries);
+                }
+            } catch (err) {
+                if (isMounted) {
+                    setError(err as Error);
+                }
+            }
+        };
+
+        fetchEntries(); // Premier chargement
+        const intervalId = setInterval(fetchEntries, 1000); // Poll toutes les unes secondes
+
+        return () => {
+            isMounted = false;
+            clearInterval(intervalId);
+        };
+    }, [meetingId, status]);
+
     useEffect(() => {
     if (finalizeMessage) {
         const timer = setTimeout(() => {
-        setFinalizeMessage("");
+            setFinalizeMessage("");
         }, 4000);
         return () => clearTimeout(timer);
     }
     }, [finalizeMessage]);
 
+    // --- Copie/Partage lien de la réunion
     const copyToClipboard = async (text: string, type: "id" | "link") => {
         try {
             if (navigator.clipboard && window.isSecureContext) {
@@ -120,12 +135,12 @@ export default function MeetingPageClient({ meetingId, meetingTitle }: { meeting
             }
 
             if (navigator.vibrate) {
-            navigator.vibrate(50);
+                navigator.vibrate(50);
             }
 
             if (type === "id") {
-            setCopiedId(true);
-            setTimeout(() => setCopiedId(false), 1500);
+                setCopiedId(true);
+                setTimeout(() => setCopiedId(false), 1500);
             } else {
                 setCopiedLink(true);
                 setTimeout(() => setCopiedLink(false), 1500);
@@ -269,12 +284,12 @@ export default function MeetingPageClient({ meetingId, meetingTitle }: { meeting
         drawVisualizer();
     } else {
         if (animationFrameRef.current) {
-        cancelAnimationFrame(animationFrameRef.current);
-        animationFrameRef.current = null;
+            cancelAnimationFrame(animationFrameRef.current);
+            animationFrameRef.current = null;
         }
         if (canvasRef.current) {
-        const ctx = canvasRef.current.getContext("2d");
-        if (ctx) ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+            const ctx = canvasRef.current.getContext("2d");
+            if (ctx) ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
         }
     }
     }, [liveState, drawVisualizer]);
@@ -326,7 +341,7 @@ export default function MeetingPageClient({ meetingId, meetingTitle }: { meeting
                 }
             };
 
-            recorder.start(10000);
+            recorder.start(15000);
         } catch (error) {
             console.error("Erreur d'accès au micro:", error);
             setLiveState(LiveRecordingState.Idle);
@@ -370,13 +385,26 @@ export default function MeetingPageClient({ meetingId, meetingTitle }: { meeting
     const handleEditEntry = async (entryId: string, newText: string) => {
         if (!entryId) return;
         try {
-            const docRef = doc(firestore, `meetings/${firestoreCollectionId}/entries`, entryId);
-            const entry = transcriptEntries.find((e) => e.id === entryId);
-            await updateDoc(docRef, {
-                text: newText,
-                isEdited: true,
-                originalText: entry?.originalText || entry?.text,
+            // Appel API PUT
+            const res = await fetch(`/api/meetings/${meetingId}/entries/${entryId}`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ newText }),
             });
+
+            if (!res.ok) {
+                const errData = await res.json();
+                throw new Error(errData.error || "Échec de la mise à jour");
+            }
+
+            // Récupère le texte mis à jour depuis l'API
+            const { entry: updatedEntry } = await res.json(); 
+
+            // Met à jour l'état local avec les données récupérées après confirmation
+            setTranscriptEntries(prev => 
+                prev.map(e => e.id === entryId ? { ...e, ...updatedEntry } : e)
+            );
+
         } catch (err) {
             console.error("Erreur de mise à jour:", err);
         }
@@ -386,6 +414,7 @@ export default function MeetingPageClient({ meetingId, meetingTitle }: { meeting
     const getFullText = (includeNames = true) =>
         transcriptEntries
             .map((e) => {
+                // e.timestamp est un string ISO
                 const time = new Date(e.timestamp).toLocaleString("fr-FR");
                 return includeNames ? `[${time}] ${e.userName}:\n${e.text}` : `${e.text}`;
             })
@@ -423,7 +452,7 @@ export default function MeetingPageClient({ meetingId, meetingTitle }: { meeting
             const res = await fetch(`/api/meetings/${meetingId}/analyze`, { method: "POST" });
             const data = await res.json();
             if (!res.ok) throw new Error(data.error);
-            setAnalysisResult(data);
+            setAnalysisResult(data.analysis);
        } catch (err: unknown) {
             console.error("Erreur analyse IA:", err);
             if (err instanceof Error) {
@@ -437,20 +466,25 @@ export default function MeetingPageClient({ meetingId, meetingTitle }: { meeting
 
     const handleFinalizeMeeting = async () => {
         setShowFinalizeModal(false);
+        setIsSendingEmail(true);
+
         try {
             const res = await fetch(`/api/meetings/${meetingId}/finalize`, {
-            method: "POST",
+                method: "POST",
             });
 
             const result = await res.json();
+
             if (res.ok && result.success) {
-            setFinalizeMessage(`Transcription envoyée à ${result.sent} participant(s).`);
+                setFinalizeMessage(`Transcription envoyée à ${result.sent} participant(s).`);
             } else {
-            setFinalizeMessage(`${result.error || "Erreur lors de l'envoi."}`);
+                setFinalizeMessage(`${result.error || "Erreur lors de l'envoi."}`);
             }
         } catch (err) {
             console.error("Erreur finalize:", err);
             setFinalizeMessage("Erreur réseau ou serveur.");
+        } finally {
+            setIsSendingEmail(false);
         }
     };
 
@@ -492,28 +526,28 @@ export default function MeetingPageClient({ meetingId, meetingTitle }: { meeting
 
                 {/* Bloc de partage de la reunion */}
                 <div className="flex items-center gap-2 mb-6 mx-auto">
-                    <div className="flex relative items-center w-40 rounded-full border border-gray-300 dark:border-white/20 overflow-hidden shadow-lg dark:drop-shadow-[3px_10px_5px_rgba(0,0,0,0.25)]">
-                        <span className="text-xs font-mono bg-white dark:bg-gray-800 px-2 py-1 max-md:truncate">
-                            {meetingId}
-                        </span>
+                    <div className="flex relative items-center w-40 sm:w-70 rounded-full border border-gray-300 dark:border-white/20 overflow-hidden shadow-lg dark:drop-shadow-[3px_10px_5px_rgba(0,0,0,0.25)]">
                         <button
                             onClick={() => copyToClipboard(meetingId, "id")}
-                            className=" text-white absolute text-xs px-2 py-1 bg-blue-600 whitespace-nowrap cursor-pointer"
+                            className=" text-white text-xs h-full px-2 py-1 bg-blue-600 whitespace-nowrap cursor-pointer"
                         >
                             {copiedId ? "ID copié !" : "Copier ID"}
                         </button>
+                        <span className="flex-1 text-xs font-mono bg-white dark:bg-gray-800 whitespace-nowrap overflow-hidden px-2 py-1">
+                            {meetingId}
+                        </span>
                     </div>
 
-                    <div className="flex relative items-center w-40 rounded-full border border-gray-300 dark:border-white/20 overflow-hidden shadow-lg dark:drop-shadow-[3px_10px_5px_rgba(0,0,0,0.25)]">
-                        <span className="text-xs font-mono bg-white dark:bg-gray-800 px-2 py-1 max-md:truncate">
-                            {meetingUrl}
-                        </span>
+                    <div className="flex relative items-center w-40 sm:w-70 rounded-full border border-gray-300 dark:border-white/20 overflow-hidden shadow-lg dark:drop-shadow-[3px_10px_5px_rgba(0,0,0,0.25)]">
                         <button
                             onClick={() => copyToClipboard(meetingUrl, "link")}
-                            className=" text-white absolute text-xs px-2 py-1 bg-blue-600 whitespace-nowrap cursor-pointer"
+                            className=" text-white text-xs h-full px-2 py-1 bg-blue-600 whitespace-nowrap cursor-pointer"
                         >
                             {copiedLink ? "Lien copié !" : "Copier lien"}
                         </button>
+                        <span className="flex-1 text-xs font-mono bg-white dark:bg-gray-800 whitespace-nowrap overflow-hidden px-2 py-1">
+                            {meetingUrl}
+                        </span>
                     </div>
                 </div>
             </section>
@@ -521,7 +555,7 @@ export default function MeetingPageClient({ meetingId, meetingTitle }: { meeting
             {/* Modale Analyse IA */}
             {analysisResult && (
                 <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 flex items-center justify-center p-4">
-                    <div className="relative w-full max-w-2xl bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6 border border-gray-300 dark:border-white/10">
+                    <div className="relative w-full max-w-2xl xl:max-w-4xl bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6 border border-gray-300 dark:border-white/10">
                         <ActionButton
                             variant="icon"
                             size="small"
@@ -593,11 +627,11 @@ export default function MeetingPageClient({ meetingId, meetingTitle }: { meeting
                                             variant="icon"
                                             size="small"
                                             onClick={handleAnalysis}
-                                            disabled={isAnalyzing || liveState !== LiveRecordingState.Finished}
+                                            disabled={isAnalyzing || liveState === LiveRecordingState.Recording || liveState === LiveRecordingState.Paused}
                                             className="rounded-md"
                                             title="Générer un résumé IA (disponible après l'arrêt)"
                                         >
-                                            {isAnalyzing ? <span className="animate-spin">✨</span> : <SparklesIcon className="size-6 mx-auto" />}
+                                            {isAnalyzing ? <SparklesSolidIcon className="size-6 animate-pulse text-amber-500 mx-auto" /> : <SparklesOutlineIcon className="size-6 mx-auto" />}
                                         </ActionButton>
 
                                         <ActionButton
@@ -657,12 +691,14 @@ export default function MeetingPageClient({ meetingId, meetingTitle }: { meeting
                                         }
                                         isLoading={false}
                                         progress={isUploading ? progress : 0}
+                                        isFileUploaded={isFirstUploadDone}
                                         onStart={startRecording}
                                         onPause={pauseRecording}
                                         onResume={resumeRecording}
                                         onStop={stopRecording}
                                         onUploadChange={handleUploadChange}
                                         onFinalize={() => setShowFinalizeModal(true)}
+                                        isSendingEmail={isSendingEmail}
                                     />
                                 )}
                             </div>

@@ -4,64 +4,59 @@ export type AnalysisResult = {
     actionItems: string[];
 };
 
+// URL de l'API Ollama (injectée depuis l'environnement Docker)
+const OLLAMA_API_URL = process.env.OLLAMA_API_URL || "http://localhost:11434";
+const OLLAMA_MODEL = "llama3"; 
+
 /**
- * Appelle le modèle Gemini pour analyser un texte de réunion
+ * Appelle un modèle Ollama local pour analyser un texte de réunion
  */
 export async function getAiAnalysis(fullText: string): Promise<AnalysisResult> {
-    const apiKey = process.env.GOOGLE_API_KEY;
-    if (!apiKey) {
-        throw new Error("Clé API Google manquante (GOOGLE_API_KEY).");
-    }
 
     // Prompt clair pour forcer un JSON structuré
     const prompt = `
-    Analyse le texte suivant d'une réunion et renvoie un JSON strict avec les clés :
-    - summary: résumé concis en français
-    - themes: tableau de thèmes principaux
-    - actionItems: tableau de tâches/action items
+    Tu es un assistant d'analyse de réunion. Analyse le texte suivant et retourne
+    UNIQUEMENT un objet JSON valide (pas de texte avant ou après) avec les clés :
+    - "summary": Un résumé concis en français.
+    - "themes": Un tableau des thèmes principaux.
+    - "actionItems": Un tableau des tâches et actions à suivre.
 
-    Texte:
+    Voici le texte de la réunion:
     """${fullText}"""
     `;
 
     const response = await fetch(
-        "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=" + apiKey,
+        `${OLLAMA_API_URL}/api/generate`,
         {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-            contents: [{ parts: [{ text: prompt }] }],
-        }),
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                model: OLLAMA_MODEL,
+                prompt: prompt,
+                format: "json", // Demande à Ollama de forcer la sortie JSON
+                stream: false,  // Nous voulons la réponse complète d'un coup
+            }),
         }
     );
 
     if (!response.ok) {
         const errText = await response.text();
-        throw new Error(`Erreur Gemini: ${response.status} ${response.statusText} - ${errText}`);
+        throw new Error(`Erreur Ollama: ${response.status} ${response.statusText} - ${errText}`);
     }
 
     const data = await response.json();
-
-    // Récupère le texte brut
-    const rawText: string =
-        data?.candidates?.[0]?.content?.parts?.[0]?.text || "";
-
-    if (!rawText) {
-        throw new Error("Réponse vide de Gemini.");
+    
+    if (!data.response) {
+        throw new Error("Réponse vide d'Ollama.");
     }
-
-    // Nettoie les éventuels blocs ```json ... ```
-    const cleaned = rawText
-        .replace(/```json/g, "")
-        .replace(/```/g, "")
-        .trim();
 
     let parsed: Partial<AnalysisResult>;
     try {
-        parsed = JSON.parse(cleaned) as Partial<AnalysisResult>;
+        // data.response contient la chaîne JSON générée par le modèle
+        parsed = JSON.parse(data.response) as Partial<AnalysisResult>;
     } catch (err) {
-        console.error("Erreur parsing JSON Gemini:", err, cleaned);
-        throw new Error("Impossible de parser la réponse Gemini en JSON.");
+        console.error("Erreur parsing JSON Ollama:", err, data.response);
+        throw new Error("Impossible de parser la réponse d'Ollama en JSON.");
     }
 
     // Sécurise les champs

@@ -1,0 +1,17 @@
+FROM ollama/ollama
+
+# Remplace l'utilisateur par 'root' pour pouvoir installer des paquets
+USER root
+
+RUN apt-get update && \
+    apt-get install -y curl && \
+    rm -rf /var/lib/apt/lists/*
+
+# Crée un script d'entrée personnalisé
+COPY entrypoint.sh /usr/local/bin/entrypoint.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh
+
+# Utilise le script comme point d'entrée
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
+
+CMD ["ollama", "serve"]

@@ -5,19 +5,12 @@ RUN apt-get update && apt-get install -y python3 python3-pip ffmpeg
 
 WORKDIR /app
 
-# ARG pour le build
-ARG FIREBASE_SERVICE_ACCOUNT_KEY
-ENV FIREBASE_SERVICE_ACCOUNT_KEY=$FIREBASE_SERVICE_ACCOUNT_KEY
-
 # Installe les dépendances Node
 COPY package*.json ./
 RUN npm install
 
 # Copie le reste du code
 COPY . .
-
-# Génère le client Prisma
-RUN npx prisma generate
 
 # App Next.js pour la production
 RUN npm run build
@@ -35,16 +28,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends python3 python3
 
 WORKDIR /app
 
-# ARG/ENV pour l’exécution
-ARG FIREBASE_SERVICE_ACCOUNT_KEY
-ENV FIREBASE_SERVICE_ACCOUNT_KEY=$FIREBASE_SERVICE_ACCOUNT_KEY
-
 # Fichiers de build de l'étape "builder"
 COPY --from=builder /app/.next ./.next
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/package*.json ./
 COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/schema.prisma ./schema.prisma
 
 # Copie le script Python
 COPY --from=builder /app/transcribe.py ./transcribe.py

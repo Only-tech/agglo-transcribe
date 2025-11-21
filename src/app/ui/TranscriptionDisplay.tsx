@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useRef, useEffect, useState } from 'react';
-import { PencilIcon, CheckIcon, XMarkIcon } from "@heroicons/react/24/solid";
+import { PencilIcon, CheckIcon, XMarkIcon, CheckCircleIcon } from "@heroicons/react/24/solid";
 import Loader from "@/app/ui/Loader";
 import { ActionButton } from '@/app/ui/ActionButton'; 
 
@@ -22,29 +22,53 @@ interface TranscriptionDisplayProps {
     onEdit: (entryId: string, newText: string) => Promise<void>;
 }
 
+// --- EditableEntry ---
 const EditableEntry = ({
     entry,
     isOwnMessage,
     onSave,
+    onEditingStatusChange,
 }: {
     entry: TranscriptEntry;
     isOwnMessage: boolean;
     onSave: (entryId: string, newText: string) => Promise<void>;
+    onEditingStatusChange: (isEditing: boolean) => void;
 }) => {
     const [isEditing, setIsEditing] = useState(false);
     const [editText, setEditText] = useState(entry.text);
     const [isLoading, setIsLoading] = useState(false);
+    const [showSuccess, setShowSuccess] = useState(false);
+
+    // Change l'état d'édition et prévient le parent
+    const setEditingState = (state: boolean) => {
+        setIsEditing(state);
+        onEditingStatusChange(state);
+    };
 
     const handleSave = async () => {
         setIsLoading(true);
-        await onSave(entry.id, editText);
-        setIsLoading(false);
-        setIsEditing(false);
+        try {
+            await onSave(entry.id, editText);
+            
+            setIsLoading(false);
+            setShowSuccess(true);
+            
+            // Attend 3 secondes avant de fermer le mode édition
+            setTimeout(() => {
+                setShowSuccess(false);
+                setEditingState(false);
+            }, 3000);
+
+        } catch (error) {
+            console.error("Erreur lors de la sauvegarde", error);
+            setIsLoading(false);
+        }
     };
 
     const handleCancel = () => {
         setEditText(entry.text);
-        setIsEditing(false);
+        setEditingState(false);
+        setShowSuccess(false);
     };
 
     const time = new Date(entry.timestamp).toLocaleTimeString("fr-FR", {
@@ -74,25 +98,36 @@ const EditableEntry = ({
                         onChange={(e) => setEditText(e.target.value)}
                         className="w-full p-2 rounded border border-gray-300 dark:border-white/20 dark:bg-gray-700 dark:text-white"
                         rows={6}
-                        disabled={isLoading}
+                        disabled={isLoading || showSuccess}
                     />
-                    <div className="flex gap-2 justify-end">
-                        <ActionButton
-                            variant="icon"
-                            size="small"
-                            onClick={handleCancel}
-                            disabled={isLoading}
-                        >
-                            <XMarkIcon className="size-5" />
-                        </ActionButton>
-                        <ActionButton
-                            variant="icon"
-                            size="small"
-                            onClick={handleSave}
-                            disabled={isLoading}
-                        >
-                            {isLoading ? "..." : <CheckIcon className="size-5 text-green-500" />}
-                        </ActionButton>
+                    <div className="flex gap-2 justify-end items-center min-h-[32px]">
+                        {showSuccess ? (
+                            // Affiche le message de succès
+                            <div className="flex items-center gap-1 text-green-600 dark:text-green-400 animate-pulse font-medium text-sm">
+                                <CheckCircleIcon className="size-5" />
+                                <span>Texte modifié !</span>
+                            </div>
+                        ) : (
+                            // Affiche les boutons
+                            <>
+                                <ActionButton
+                                    variant="icon"
+                                    size="small"
+                                    onClick={handleCancel}
+                                    disabled={isLoading}
+                                >
+                                    <XMarkIcon className="size-5" />
+                                </ActionButton>
+                                <ActionButton
+                                    variant="icon"
+                                    size="small"
+                                    onClick={handleSave}
+                                    isLoading={isLoading}
+                                >
+                                    {!isLoading && <CheckIcon className="size-5 text-green-500" />}
+                                </ActionButton>
+                            </>
+                        )}
                     </div>
                 </div>
             ) : (
@@ -108,7 +143,7 @@ const EditableEntry = ({
                 <ActionButton
                     variant="icon"
                     size="small"
-                    onClick={() => setIsEditing(true)}
+                    onClick={() => setEditingState(true)}
                     title="Modifier le texte"
                     className="absolute -bottom-1.5 -right-1.5"
                 >
@@ -119,6 +154,7 @@ const EditableEntry = ({
     );
 };
 
+// --- TranscriptionDisplay ---
 export const TranscriptionDisplay = ({
     entries,
     currentUserId,
@@ -128,7 +164,28 @@ export const TranscriptionDisplay = ({
     const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
     const [displayedP, setDisplayedP] = useState("");
+    // Savoir si scroll manuel vers le haut
+    const [userHasScrolledUp, setUserHasScrolledUp] = useState(false);
+    // Savoir si message en cours d'édition
+    const [isAnyEntryEditing, setIsAnyEntryEditing] = useState(false);
+
     const fullPText = "L'enregistrement n'a pas commencé ou aucun participant ne parle\nUploadez un fichier en cliquant sur le bouton *+* ou démarrer un enregistrement";
+
+    // --- Gère le scroll manuel ---
+    const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+        const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
+        
+        // En bas à moins de 50px du fond
+        const isAtBottom = scrollHeight - scrollTop - clientHeight < 50;
+
+        if (isAtBottom) {
+            // Si en bas, réactive l'auto-scroll
+            setUserHasScrolledUp(false);
+        } else {
+            // Si remonté, désactive l'auto-scroll
+            setUserHasScrolledUp(true);
+        }
+    };
 
     // --- Animation de P typeWriter ---
     useEffect(() => {
@@ -144,15 +201,26 @@ export const TranscriptionDisplay = ({
         return () => clearInterval(interval);
     }, [fullPText]);
 
+    // --- Auto-Scroll ---
     useEffect(() => {
-        if (messagesEndRef.current) {
-        messagesEndRef.current.scrollTop = messagesEndRef.current.scrollHeight;
+        // Pas de scroll si remonté manuel, si  message en édition
+        if (userHasScrolledUp || isAnyEntryEditing) {
+            return;
         }
-    }, [entries, currentText]);
+
+        if (messagesEndRef.current) {
+            // Scroll vers le bas
+            messagesEndRef.current.scrollTo({
+                top: messagesEndRef.current.scrollHeight,
+                behavior: 'smooth' 
+            });
+        }
+    }, [entries, currentText, userHasScrolledUp, isAnyEntryEditing]);
 
     return (
         <div
             ref={messagesEndRef}
+            onScroll={handleScroll}
             className="space-y-3 w-full max-md:h-100 md:h-72 xl:h-90 overflow-y-auto p-2 xl:p-2.5 rounded-2xl sm:rounded-4xl shadow-md border border-gray-400 dark:border-white/10 bg-gradient-to-b from-gray-200/80 to-gray-200/40 dark:bg-gradient-to-b dark:from-[#222222]/80 dark:to-[#2E2E2E]/40"
         >
             {entries.length === 0 && !currentText && (
@@ -163,10 +231,11 @@ export const TranscriptionDisplay = ({
 
             {entries.map((entry) => (
                 <EditableEntry
-                key={entry.id}
-                entry={entry}
-                isOwnMessage={entry.userId === currentUserId}
-                onSave={onEdit}
+                    key={entry.id}
+                    entry={entry}
+                    isOwnMessage={entry.userId === currentUserId}
+                    onSave={onEdit}
+                    onEditingStatusChange={setIsAnyEntryEditing}
                 />
             ))}
 

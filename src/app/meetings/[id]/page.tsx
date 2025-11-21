@@ -9,11 +9,13 @@ export const metadata: Metadata = {
 };
 
 async function getMeeting(id: string) {
-    const meeting = await db.meeting.findUnique({
-        where: { id },
-        select: { id: true, title: true } 
-    });
-    return meeting;
+    const result = await db.query(
+        'SELECT id, title FROM "Meeting" WHERE id = $1',
+        [id] // Paramètre d'ID sécurisé
+    );
+    const meeting = result.rows[0];
+
+    return meeting || null;
 }
 
 export default async function Page(props: { params: Promise<{ id: string }> }) {

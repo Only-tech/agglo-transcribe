@@ -10,46 +10,46 @@ import { TrashIcon } from "@heroicons/react/20/solid";
 import ConfirmationModal from "@/app/ui/ConfirmationModal";
 
 type Meeting = {
-  id: string;
-  title: string;
-  createdAt: string;
+    id: string;
+    title: string;
+    createdAt: string;
 };
 
 function usePaginatedMeetings() {
-  const [meetings, setMeetings] = useState<Meeting[]>([]);
-  const [cursor, setCursor] = useState<string | null>(null);
-  const [hasMore, setHasMore] = useState(true);
-  const [loading, setLoading] = useState(false);
+    const [meetings, setMeetings] = useState<Meeting[]>([]);
+    const [cursor, setCursor] = useState<string | null>(null);
+    const [hasMore, setHasMore] = useState(true);
+    const [loading, setLoading] = useState(false);
 
-  const fetchMeetings = useCallback(
+    const fetchMeetings = useCallback(
         async (cursor?: string) => {
-        if (loading) return;
-        setLoading(true);
+            if (loading) return;
+            setLoading(true);
 
-        const url = cursor
-            ? `/api/meetings/history?cursor=${cursor}&limit=10`
-            : `/api/meetings/history?limit=10`;
+            const url = cursor
+                ? `/api/meetings/history?cursor=${cursor}&limit=10`
+                : `/api/meetings/history?limit=10`;
 
-        try {
-            const res = await fetch(url);
-            if (res.ok) {
-            const data = await res.json();
+            try {
+                const res = await fetch(url);
+                if (res.ok) {
+                const data = await res.json();
 
-            setMeetings((prev) => {
-                const merged = [...prev, ...data.items];
-                // dédoublonnage par id
-                const unique = Array.from(new Map(merged.map((m) => [m.id, m])).values());
-                return unique;
-            });
+                setMeetings((prev) => {
+                    const merged = [...prev, ...data.items];
+                    // dédoublonnage par id
+                    const unique = Array.from(new Map(merged.map((m) => [m.id, m])).values());
+                    return unique;
+                });
 
-            setCursor(data.nextCursor);
-            setHasMore(!!data.nextCursor);
+                setCursor(data.nextCursor);
+                setHasMore(!!data.nextCursor);
+                }
+            } finally {
+                setLoading(false);
             }
-        } finally {
-            setLoading(false);
-        }
         },
-        [] 
+        [loading] 
     );
 
     useEffect(() => {
@@ -57,7 +57,7 @@ function usePaginatedMeetings() {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []); 
 
-  return { meetings, hasMore, cursor, fetchMeetings, loading, setMeetings };
+    return { meetings, hasMore, cursor, fetchMeetings, loading, setMeetings };
 }
 
 
@@ -90,39 +90,39 @@ export default function DashboardPage() {
         setError("");
 
         try {
-        if (action === "join") {
-            if (!meetingId) {
-            setError("Veuillez entrer un ID pour rejoindre.");
-            setLoading(false);
-            return;
+            if (action === "join") {
+                if (!meetingId) {
+                    setError("Veuillez entrer un ID pour rejoindre.");
+                    setLoading(false);
+                    return;
+                }
+                const res = await fetch(`/api/meetings/${meetingId}/join`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ password }),
+                });
+                if (res.status === 404) {
+                    if (!title) {
+                        setError("Réunion introuvable. Entrez un titre pour la créer.");
+                        setLoading(false);
+                        return;
+                    }
+                    await createMeeting();
+                    return;
+                }
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error);
+                router.push(`/meetings/${meetingId}`);
             }
-            const res = await fetch(`/api/meetings/${meetingId}/join`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ password }),
-            });
-            if (res.status === 404) {
-            if (!title) {
-                setError("Réunion introuvable. Entrez un titre pour la créer.");
-                setLoading(false);
-                return;
-            }
-            await createMeeting();
-            return;
-            }
-            const data = await res.json();
-            if (!res.ok) throw new Error(data.error);
-            router.push(`/meetings/${meetingId}`);
-        }
 
-        if (action === "create") {
-            if (!title) {
-            setError("Veuillez entrer un titre pour créer une réunion.");
-            setLoading(false);
-            return;
+            if (action === "create") {
+                if (!title) {
+                    setError("Veuillez entrer un titre pour créer une réunion.");
+                    setLoading(false);
+                    return;
+                }
+                await createMeeting();
             }
-            await createMeeting();
-        }
         } catch (err: unknown) {
             if (err instanceof Error) {
                 setError(err.message);
@@ -136,9 +136,9 @@ export default function DashboardPage() {
 
     const createMeeting = async () => {
         const res = await fetch("/api/meetings", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title, password }),
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ title, password }),
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error);
@@ -168,10 +168,10 @@ export default function DashboardPage() {
 
     if (status === "loading") {
         return (
-        <div className="text-center p-10">
-            <p>Chargement de la session</p>
-            <Loader variant="dots" />
-        </div>
+            <div className="text-center p-10">
+                <p>Chargement de la session</p>
+                <Loader variant="dots" />
+            </div>
         );
     }
 

@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { authOptions } from "@/app/lib/auth/options";
 import { db } from "@/app/lib/db";
-import { firestore } from "@/app/lib/firestore";
 import { convertToWav, runWhisper } from "@/app/lib/audioProcessing";
 
 export async function POST(req: Request) {
@@ -20,10 +19,12 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Données manquantes." }, { status: 400 });
     }
 
-    const participant = await db.participant.findFirst({
-      where: { meetingId, userId: session.user.id },
-    });
-    if (!participant) {
+    // Vérification du participant
+    const participantResult = await db.query(
+      'SELECT id FROM "Participant" WHERE "meetingId" = $1 AND "userId" = $2',
+      [meetingId, session.user.id]
+    );
+    if (participantResult.rowCount === 0) {
       return NextResponse.json({ error: "Accès refusé." }, { status: 403 });
     }
 
@@ -36,21 +37,20 @@ export async function POST(req: Request) {
       return NextResponse.json({ transcription: null });
     }
 
-    // Sauvegarde Firestore
-    const entry = {
-      userId: session.user.id,
-      userName: session.user.name || "Participant",
-      text: text.trim(),
-      isEdited: false,
-      timestamp: Date.now(),
-    };
+    // Écrit la transcription dans la BDD
+    const entryResult = await db.query(
+      'INSERT INTO "TranscriptEntry" (text, timestamp, "isEdited", "userName", "meetingId", "userId") VALUES ($1, $2, $3, $4, $5, $6) RETURNING text',
+      [
+        text.trim(),
+        new Date(Date.now()),
+        false,
+        session.user.name || "Participant",
+        meetingId,
+        session.user.id,
+      ]
+    );
 
-    await firestore
-      .collection("meetings")
-      .doc(meetingId)
-      .collection("entries")
-      .add(entry);
-
+    const entry = entryResult.rows[0];
     return NextResponse.json({ text: entry.text });
   } catch (err: unknown) {
     console.error("Erreur upload fichier:", err);

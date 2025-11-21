@@ -47,13 +47,13 @@ export const ActionButton = ({
         <button
             className={`${baseStyles} ${variantStyles[variant]} ${sizeStyles[size]} ${className}`}
             {...props}
-            >
+        >
             {isSlideVariant ? (
                 <>
-                <span className={`absolute inset-0 bg-gray-200 transition-transform duration-400 ease-out ${slideDirection} group-hover:translate-x-0 z-0 focus:ring-0`}></span>
-                <span className="relative z-10 transition-colors duration-400 text-white/90 group-hover:text-gray-900 inline-flex items-center whitespace-nowrap">
-                    {children}
-                </span>
+                    <span className={`absolute inset-0 bg-gray-200 transition-transform duration-400 ease-out ${slideDirection} group-hover:translate-x-0 z-0 focus:ring-0`}></span>
+                    <span className="relative z-10 transition-colors duration-400 text-white/90 group-hover:text-gray-900 inline-flex items-center whitespace-nowrap">
+                        {children}
+                    </span>
                 </>
             ) : (
                 <>

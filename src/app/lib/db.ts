@@ -1,16 +1,23 @@
-import { PrismaClient } from "@prisma/client";
+import { Pool } from 'pg';
+
+// 'db' est le nom du service dans docker-compose.yml
+const connectionString = process.env.DATABASE_URL;
+// const connectionString = process.env.DATABASE_URL || 'postgresql://transcription:transcription@db:5432/transcription_db';
 
 declare global {
-  // Stocke le client prisma dans le cache global en dév
-  var prisma: PrismaClient | undefined;
+  // Stocke le pool dans le cache global en dév
+  var pool: Pool | undefined;
 }
 
-export const db =
-  global.prisma ||
-  new PrismaClient({
-    log: process.env.NODE_ENV === "development" ? ["query", "error", "warn"] : ["error"],
-  });
+let pool: Pool;
 
-if (process.env.NODE_ENV !== "production") {
-  global.prisma = db;
+if (process.env.NODE_ENV === "production") {
+  pool = new Pool({ connectionString });
+} else {
+  if (!global.pool) {
+    global.pool = new Pool({ connectionString });
+  }
+  pool = global.pool;
 }
+
+export const db = pool;

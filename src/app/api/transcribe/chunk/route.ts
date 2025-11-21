@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { authOptions } from "@/app/lib/auth/options";
 import { db } from "@/app/lib/db";
-import { firestore } from "@/app/lib/firestore";
 import { convertToWav, runWhisper } from "@/app/lib/audioProcessing";
 
 export async function POST(req: Request) {
@@ -22,12 +21,12 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Données manquantes." }, { status: 400 });
     }
 
-    const participant = await db.participant.findFirst({
-        where: { meetingId: meetingId, userId: userId }
-    });
-    
-    if (!participant) {
-        return NextResponse.json({ error: "Accès refusé à cette réunion." }, { status: 403 });
+    const participantResult = await db.query(
+      'SELECT id FROM "Participant" WHERE "meetingId" = $1 AND "userId" = $2',
+      [meetingId, userId]
+    );
+    if (participantResult.rowCount === 0) {
+      return NextResponse.json({ error: "Accès refusé à cette réunion." }, { status: 403 });
     }
 
     //Traitement audio (ffmpeg + whisper)
@@ -47,29 +46,18 @@ export async function POST(req: Request) {
         await cleanup(); 
     }
 
-    // Pas sauvegarde si Whisper n'a rien retourné
     if (!text || text.trim().length === 0) {
       return NextResponse.json({ transcription: null });
     }
 
-    //  fetcher le meeting.firestoreCollectionId
-    const firestoreCollectionId = meetingId; 
+    // Écrit la transcription dans la BD
+    const entryResult = await db.query(
+      'INSERT INTO "TranscriptEntry" (text, timestamp, "isEdited", "userName", "meetingId", "userId") VALUES ($1, $2, $3, $4, $5, $6) RETURNING id, text',
+      [text.trim(), new Date(Date.now()), false, userName, meetingId, userId]
+    );
     
-    const entry = {
-      userId: userId,
-      userName: userName,
-      text: text.trim(),
-      isEdited: false,
-      timestamp: Date.now(),
-    };
-
-    const docRef = await firestore
-      .collection("meetings")
-      .doc(firestoreCollectionId)
-      .collection("entries")
-      .add(entry);
-
-    return NextResponse.json({ id: docRef.id, text: entry.text });
+    const entry = entryResult.rows[0];
+    return NextResponse.json({ id: entry.id, text: entry.text });
 
   } catch (err: unknown) {
     console.error("Transcription chunk error:", err);
