@@ -7,14 +7,14 @@ Elle permet de créer/rejoindre des réunions, d’enregistrer et transcrire l�
 
 ## Fonctionnalités
 
-- **Transcription en direct** depuis le micro ou un fichier audio (Whisper + FFmpeg).
-- **Gestion des réunions** : création, participation, historique, suppression.
+- **Transcription en direct** depuis un fichier audio (Whisper + FFmpeg).
+- **Transcription en direct + live** depuis le micro (choix de la fréquence d'enregistrement, Whisper + FFmpeg).
+- **Gestion des réunions** : création, participation, historique et suppression depuis le Dashboard (Le bouton "Lancer" ou "Rejoindre" apparaît selon le champ rempli).
 - **Authentification sécurisée** avec NextAuth (credentials).
-- **Base de données PostgreSQL pgAdmin** pour stocker les réunions, participants et analyses.
-- **Stockage et synchronisation Firebase** (Firestore pour transcripts, Storage pour fichiers).
+- **Base de données PostgreSQL pgAdmin** pour stocker les réunions, transcriptions, participants et analyses.
 - **Analyse IA (Ollama)** pour générer résumés, thèmes et actions à partir des transcriptions.
-- **Interface moderne** avec Next.js 15, React, TypeScript et Tailwind CSS.
-- **Export & partage** : copier, télécharger, ou envoyer par e‑mail les transcriptions.
+- **Export & partage** : copier, télécharger, ou envoyer par e‑mail les transcriptions et résumés.
+- **Interface moderne** avec Next.js 15, React, TypeScript et Tailwind CSS -> full responsive.
 
 ---
 

@@ -36,7 +36,7 @@ export const ActionBars = ({ liveState, isLoading, progress, isFileUploaded = fa
     const recordingOptions = [
         { label: '15 sec (Rapide)', value: 15000 },
         { label: '1 min', value: 60000 },
-        { label: '2.5 min', value: 150000 },
+        { label: '2 min', value: 120000 },
         { label: '5 min', value: 300000 },
         { label: '10 min', value: 600000 },
         { label: '30 min', value: 1800000 },
