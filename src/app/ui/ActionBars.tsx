@@ -19,10 +19,11 @@ interface ActionBarsProps {
     onUploadChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
     onFinalize?: () => void;
     isSendingEmail?: boolean;
+    isProcessing?: boolean;
 
 }
 
-export const ActionBars = ({ liveState, isLoading, progress, isFileUploaded = false, onStart, onPause, onResume, onStop, onUploadChange, onFinalize, isSendingEmail = false, }: ActionBarsProps) => {
+export const ActionBars = ({ liveState, isLoading, progress, isFileUploaded = false, onStart, onPause, onResume, onStop, onUploadChange, onFinalize, isSendingEmail = false, isProcessing = false }: ActionBarsProps) => {
     const isRecording = liveState === 'Recording';
     const isPaused = liveState === 'Paused';
     const showBottomBar = isRecording || isPaused;
@@ -74,7 +75,13 @@ export const ActionBars = ({ liveState, isLoading, progress, isFileUploaded = fa
         <div className="w-full flex items-center justify-center pt-4 pb-2 mt-4 border-t border-gray-300 dark:border-white/10 transition-all duration-300 ease-in-out">
             {showBottomBar && (
                 <div className="flex gap-6 justify-center items-center">
-                    <ActionButton variant="icon" size="large" onClick={onStop} title="Stop & Terminer">
+                    <ActionButton 
+                        variant="icon" 
+                        size="large" 
+                        onClick={onStop} 
+                        title="Stop & Terminer"
+                        disabled={isProcessing}
+                    >
                         <StopIcon className="size-6" />
                     </ActionButton>
                     <div className="relative">
@@ -84,6 +91,7 @@ export const ActionBars = ({ liveState, isLoading, progress, isFileUploaded = fa
                             size="large"
                             onClick={isRecording ? onPause : onResume} 
                             title={isRecording ? "Mettre en pause" : "Reprendre"}
+                            disabled={isProcessing}
                         >
                             {isRecording ? <MicrophoneIcon className="size-6" /> : <MicrophoneSlashIcon className="size-6" />}
                         </ActionButton>
@@ -94,7 +102,10 @@ export const ActionBars = ({ liveState, isLoading, progress, isFileUploaded = fa
 
             {showInitialActions && (
                 <div className="flex gap-6 w-full justify-center relative">
-                    <UploadButton onFileSelected={onUploadChange} title="Uploader un fichier audio" />
+                    {/* 'pointer-events-none' désactive le label */}
+                    <div className={isProcessing ? "opacity-50 pointer-events-none" : ""}>
+                        <UploadButton onFileSelected={onUploadChange} title="Uploader un fichier audio" />
+                    </div>
                     
                     {/* Bouton Microphone avec Menu seletion durée */}
                     <div className="relative" ref={menuRef}>
@@ -104,6 +115,7 @@ export const ActionBars = ({ liveState, isLoading, progress, isFileUploaded = fa
                             onClick={() => setShowDurationMenu(!showDurationMenu)} 
                             title="Démarrer l'écoute (choisir durée)"
                             className="!rounded-br-md"
+                            disabled={isProcessing}
                         >
                             <MicrophoneIcon className="size-6" />
                         </ActionButton>
@@ -141,7 +153,7 @@ export const ActionBars = ({ liveState, isLoading, progress, isFileUploaded = fa
                             onClick={onFinalize}
                             title="Envoyer la transcription"
                             className='absolute right-4'
-                            disabled={isSendingEmail}  
+                            disabled={isSendingEmail || isProcessing}  
                             isLoading={isSendingEmail}
                         >
                             {!isSendingEmail && <PaperAirplaneIcon className="size-6 -rotate-35"/>}

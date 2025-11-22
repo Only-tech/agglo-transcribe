@@ -642,7 +642,7 @@ export default function MeetingPageClient({ meetingId, meetingTitle }: { meeting
                                             variant="icon"
                                             size="small"
                                             onClick={handleAnalysis}
-                                            disabled={isAnalyzing || liveState === LiveRecordingState.Recording || liveState === LiveRecordingState.Paused}
+                                            disabled={isAnalyzing || isProcessingChunk || isUploading || liveState === LiveRecordingState.Recording || liveState === LiveRecordingState.Paused}
                                             className="rounded-md"
                                             title="Générer un résumé IA (disponible après l'arrêt)"
                                         >
@@ -654,6 +654,7 @@ export default function MeetingPageClient({ meetingId, meetingTitle }: { meeting
                                             size="small"
                                             onClick={handleCopy}
                                             className="rounded-md"
+                                            disabled={isAnalyzing || isProcessingChunk || isUploading}
                                             title="Copier la transcription"
                                         >
                                             {copied ? <CheckIcon className="size-6 mx-auto text-blue-800" /> : <Square2StackIcon className="size-6 mx-auto" />}
@@ -664,6 +665,7 @@ export default function MeetingPageClient({ meetingId, meetingTitle }: { meeting
                                             size="small"
                                             onClick={handleDownload}
                                             className="rounded-md rounded-tr-2xl sm:rounded-tr-4xl"
+                                            disabled={isAnalyzing || isProcessingChunk || isUploading}
                                             title="Télécharger le .txt"
                                         >
                                             {downloaded ? <CheckIcon className="size-6 mx-auto text-blue-800" /> : <ArrowDownTrayIcon className="size-6 mx-auto" />}
@@ -715,6 +717,7 @@ export default function MeetingPageClient({ meetingId, meetingTitle }: { meeting
                                         onUploadChange={handleUploadChange}
                                         onFinalize={() => setShowFinalizeModal(true)}
                                         isSendingEmail={isSendingEmail}
+                                        isProcessing={isAnalyzing || isProcessingChunk || isUploading}
                                     />
                                 )}
                             </div>
